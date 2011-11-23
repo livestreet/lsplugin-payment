@@ -1,0 +1,12 @@
+.payment-block {
+    background: none repeat scroll 0 0 #FFFFFF;
+    padding: 15px;
+}
+
+.payment-block .input-radio {
+    margin: 0;
+    vertical-align: middle;
+}
+.payment-block img {
+    vertical-align: middle;
+}
