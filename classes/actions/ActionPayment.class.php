@@ -103,14 +103,7 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 			$oViewerLocal->Assign('LMI_PAYMENT_DESC',$sDescription);
 			$oViewerLocal->Assign('LMI_PAYMENT_DESC_BASE64',base64_encode($sDescription));
 			$oViewerLocal->Assign('LMI_PAYMENT_NO',$oPayment->getId());
-			
-			$sPurse=Config::Get('plugin.payment.wm.payee_purse_wmz');
-			if ($oPayment->getCurrencyId()==PluginPayment_ModulePayment::PAYMENT_CURRENCY_RUR) {
-				$sPurse=Config::Get('plugin.payment.wm.payee_purse_wmr');
-			} elseif ($oPayment->getCurrencyId()==PluginPayment_ModulePayment::PAYMENT_CURRENCY_UAH) {
-				$sPurse=Config::Get('plugin.payment.wm.payee_purse_wmu');
-			}
-			$oViewerLocal->Assign('LMI_PAYEE_PURSE',$sPurse);
+			$oViewerLocal->Assign('LMI_PAYEE_PURSE',$this->PluginPayment_Payment_GetWmPurseByCurrency($oPayment->getCurrencyId()));
 			
 			$oViewerLocal->Assign('LMI_SIM_MODE',0);
 			$oViewerLocal->Assign('LMI_RESULT_URL',Router::getPath('payment').'wm/result/');

@@ -423,6 +423,16 @@ class PluginPayment_ModulePayment extends Module {
 	}
 	
 	
+	public function GetWmPurseByCurrency($iCurrency) {
+		$sPurse = Config::Get ( 'plugin.payment.wm.payee_purse_wmz' );
+		if ($iCurrency == PluginPayment_ModulePayment::PAYMENT_CURRENCY_RUR) {
+			$sPurse = Config::Get ( 'plugin.payment.wm.payee_purse_wmr' );
+		} elseif ($iCurrency == PluginPayment_ModulePayment::PAYMENT_CURRENCY_UAH) {
+			$sPurse = Config::Get ( 'plugin.payment.wm.payee_purse_wmu' );
+		}
+		return $sPurse;
+	}
+	
 	public function ResultWm() {
 		/**
 		 * Сначала проверяем правильность номера оплаты, ключа, суммы и кошелька
@@ -437,8 +447,9 @@ class PluginPayment_ModulePayment extends Module {
 		if ($oPayment->getSum()!=getRequest('LMI_PAYMENT_AMOUNT',null,'post')) {
 			return $this->LogError(self::PAYMENT_ERROR_WM_RESULT_SUM,array(getRequest('LMI_PAYMENT_AMOUNT',null,'post'),$oPayment));
 		}
-		if (Config::Get('plugin.payment.wm.payee_purse')!=getRequest('LMI_PAYEE_PURSE',null,'post')) {
-			return $this->LogError(self::PAYMENT_ERROR_WM_RESULT_PURSE,array(Config::Get('plugin.payment.wm.payee_purse'),getRequest('LMI_PAYEE_PURSE',null,'post'),$oPayment));
+		$sPurse=$this->GetWmPurseByCurrency($oPayment->getCurrencyId());
+		if ($sPurse!=getRequest('LMI_PAYEE_PURSE',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_WM_RESULT_PURSE,array($sPurse,getRequest('LMI_PAYEE_PURSE',null,'post'),$oPayment));
 		}
 		/**
 		 * Проверяем наличие предварительного запроса
@@ -500,8 +511,9 @@ class PluginPayment_ModulePayment extends Module {
 		if ($oPayment->getSum()!=getRequest('LMI_PAYMENT_AMOUNT',null,'post')) {
 			return $this->LogError(self::PAYMENT_ERROR_WM_PRERESULT_SUM,array(getRequest('LMI_PAYMENT_AMOUNT',null,'post'),$oPayment));
 		}
-		if (Config::Get('plugin.payment.wm.payee_purse')!=getRequest('LMI_PAYEE_PURSE',null,'post')) {
-			return $this->LogError(self::PAYMENT_ERROR_WM_PRERESULT_PURSE,array(Config::Get('plugin.payment.wm.payee_purse'),getRequest('LMI_PAYEE_PURSE',null,'post'),$oPayment));
+		$sPurse=$this->GetWmPurseByCurrency($oPayment->getCurrencyId());
+		if ($sPurse!=getRequest('LMI_PAYEE_PURSE',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_WM_PRERESULT_PURSE,array($sPurse,getRequest('LMI_PAYEE_PURSE',null,'post'),$oPayment));
 		}
 		/**
 		 * Проверяем состояние нового платежа
