@@ -349,7 +349,15 @@ class PluginPayment_ModulePayment extends Module {
 	 * 
 	 * @param PluginPayment_ModulePayment_EntityPaymentTarget $oPayment
 	 */
-	
+	public function ProcessPaymentSuccess($oPayment) {
+		if ($oTarget=$this->GetTargetByPaymentId($oPayment->getId())) {
+			$sMethod = 'ProcessPaymentSuccessTarget' . ucfirst ( $oTarget->getTargetType() );
+			if (method_exists ( $this, $sMethod )) {
+				return $this->$sMethod ( $oPayment, $oTarget );
+			}
+		}
+		return true;
+	}
 	
 	/**
 	 * Информирование об несостоявшемся платеже - выполняется в момент редиректа пользователя после попытки оплаты
