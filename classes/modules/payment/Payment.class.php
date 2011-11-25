@@ -243,7 +243,7 @@ class PluginPayment_ModulePayment extends Module {
 	 * @param bool $bRedirect
 	 */
 	public function MakePayment($sTargetType,$iTargetId,$iSum,$iCurrencyId=self::PAYMENT_CURRENCY_USD,$bRedirect=TRUE) {
-		if (!is_float($iSum)) {
+		if (!is_float($iSum) and !is_numeric($iSum)) {
 			return $this->LogError(self::PAYMENT_ERROR_FAILED_SUM,$iSum);
 		}
 		if (!$this->GetCurrencyById($iCurrencyId)) {			
@@ -280,12 +280,16 @@ class PluginPayment_ModulePayment extends Module {
 			$this->AddTarget($oTarget);
 			
 			if ($bRedirect) {
-				Router::Location(Router::GetPath('payment')."{$oPayment->getId()}/");
+				Router::Location($this->GetPaymentUrl($oPayment));
 			} else {
 				return 0;
 			}
 		}		
 		return $this->LogError(self::PAYMENT_ERROR_FAILED_MAKE,$oPayment);
+	}
+	
+	public function GetPaymentUrl($oPayment) {
+		return Router::GetPath('payment')."{$oPayment->getId()}/";
 	}
 	
 	public function GetAvailablePaymentType($oPayment) {
