@@ -1,3 +1,21 @@
+-- phpMyAdmin SQL Dump
+-- version 3.2.4
+-- http://www.phpmyadmin.net
+--
+-- Хост: localhost
+-- Время создания: Ноя 27 2011 г., 06:36
+-- Версия сервера: 5.1.44
+-- Версия PHP: 5.3.1
+
+SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
+
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `prefix_payment`
+--
+
 CREATE TABLE IF NOT EXISTS `prefix_payment` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `key` varchar(32) NOT NULL,
@@ -10,24 +28,35 @@ CREATE TABLE IF NOT EXISTS `prefix_payment` (
   `state` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `currency_id` (`currency_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
+
+
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `lscms_payment_currency`
+-- Структура таблицы `prefix_payment_currency`
 --
 
 CREATE TABLE IF NOT EXISTS `prefix_payment_currency` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=4 ;
+
+--
+-- Дамп данных таблицы `prefix_payment_currency`
+--
+
+INSERT INTO `prefix_payment_currency` (`id`, `name`) VALUES
+(1, 'USD'),
+(2, 'RUR'),
+(3, 'UAH');
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `lscms_payment_liqpay`
+-- Структура таблицы `prefix_payment_liqpay`
 --
 
 CREATE TABLE IF NOT EXISTS `prefix_payment_liqpay` (
@@ -38,10 +67,11 @@ CREATE TABLE IF NOT EXISTS `prefix_payment_liqpay` (
   PRIMARY KEY (`payment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `lscms_payment_paypro`
+-- Структура таблицы `prefix_payment_paypro`
 --
 
 CREATE TABLE IF NOT EXISTS `prefix_payment_paypro` (
@@ -112,10 +142,29 @@ CREATE TABLE IF NOT EXISTS `prefix_payment_paypro` (
   PRIMARY KEY (`payment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `lscms_payment_wm`
+-- Структура таблицы `prefix_payment_target`
+--
+
+CREATE TABLE IF NOT EXISTS `prefix_payment_target` (
+  `payment_id` int(11) NOT NULL,
+  `target_id` int(11) NOT NULL,
+  `target_type` varchar(20) NOT NULL,
+  `state` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`payment_id`),
+  KEY `target_id` (`target_id`,`target_type`),
+  KEY `state` (`state`),
+  KEY `target_type` (`target_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `prefix_payment_wm`
 --
 
 CREATE TABLE IF NOT EXISTS `prefix_payment_wm` (
@@ -132,16 +181,31 @@ CREATE TABLE IF NOT EXISTS `prefix_payment_wm` (
   PRIMARY KEY (`payment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 --
--- Структура таблицы `prefix_payment_target`
+-- Ограничения внешнего ключа сохраненных таблиц
 --
 
-CREATE TABLE IF NOT EXISTS `prefix_payment_target` (
-  `payment_id` int(11) NOT NULL,
-  `target_id` int(11) NOT NULL,
-  `target_type` varchar(20) NOT NULL,
-  `state` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`payment_id`),
-  KEY `target_id` (`target_id`,`target_type`),
-  KEY `state` (`state`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+--
+-- Ограничения внешнего ключа таблицы `prefix_payment_liqpay`
+--
+ALTER TABLE `prefix_payment_liqpay`
+  ADD CONSTRAINT `prefix_payment_liqpay_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `prefix_payment_paypro`
+--
+ALTER TABLE `prefix_payment_paypro`
+  ADD CONSTRAINT `prefix_payment_paypro_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `prefix_payment_target`
+--
+ALTER TABLE `prefix_payment_target`
+  ADD CONSTRAINT `prefix_payment_target_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `prefix_payment_wm`
+--
+ALTER TABLE `prefix_payment_wm`
+  ADD CONSTRAINT `prefix_payment_wm_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;

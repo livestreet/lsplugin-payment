@@ -10,3 +10,7 @@
 .payment-block img {
     vertical-align: middle;
 }
+
+.payment_content {
+	background-color: #FFFFFF; padding: 15px;font-size:14px;
+}

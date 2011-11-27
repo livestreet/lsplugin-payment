@@ -230,6 +230,10 @@ class PluginPayment_ModulePayment extends Module {
 		return $this->oMapper->GetTargetByPaymentId($sId);
 	}
 	
+	public function GetTargetsByFilter($aFilter) {
+		return $this->oMapper->GetTargetsByFilter($aFilter);
+	}
+	
 	/**
 	 * Логирование ошибок возникающих при оплате
 	 * @param unknown_type $iNumberError

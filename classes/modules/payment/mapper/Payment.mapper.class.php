@@ -136,5 +136,29 @@ class PluginPayment_ModulePayment_MapperPayment extends Mapper {
 		}
 		return null;
 	}
+	
+	public function GetTargetsByFilter($aFilter) {
+		$sql = "SELECT 
+					*
+				FROM 
+					".Config::Get('plugin.payment.table.payment_target')."	
+				WHERE	
+					1 = 1
+					{ AND target_id = ?d }									
+					{ AND target_type = ? }
+					{ AND state = ?d }
+				;";
+		$aResult=array();
+		if ($aRows=$this->oDb->selectPage($iCount,$sql,
+										isset($aFilter['target_id']) ? $aFilter['target_id'] : DBSIMPLE_SKIP,
+										isset($aFilter['target_type']) ? $aFilter['target_type'] : DBSIMPLE_SKIP,
+										isset($aFilter['state']) ? $aFilter['state'] : DBSIMPLE_SKIP
+										)) {
+			foreach ($aRows as $aRow) {
+				$aResult[]=Engine::GetEntity('PluginPayment_ModulePayment_EntityPaymentTarget',$aRow);
+			}
+		}
+		return $aResult;		
+	}
 }
 ?>

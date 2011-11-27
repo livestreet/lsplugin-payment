@@ -1,8 +1,8 @@
 {assign var="noSidebar" value=true}
 {include file='header.tpl'}
 
-<div class="topic">
-	<div class="content">
+
+	<div class="payment_content">
 		
 			<div class="payment-block" id="payment-area">
 				<b>{$aLang.plugin.payment.payment_target_name}:</b> {$oPaymentTarget->getTargetName()}<br />
@@ -48,6 +48,6 @@
 		</div>
 
 	</div>
-</div>
+
 
 {include file='footer.tpl'}

@@ -40,9 +40,15 @@ $config['liqpay']['merchant_id']='';
 $config['liqpay']['signature']='';
 
 $config['paypro']['key']='';
-$config['paypro']['products']='';
+$config['paypro']['products']=''; // Номер продукта, у этого продукта должен быть прописан урл информирования о платеже: http://вашсайт/payment/paypro/notify/
 $config['paypro']['min_sum']=10; // Минимальная сумма USD которую можно оплатить через PayPro
 
+/**
+ * В настройках робокассы необходимо прописать слудующие урлы:
+ * result: http://вашсайт/payment/robox/result/
+ * success: http://вашсайт/payment/robox/success/
+ * fail: http://вашсайт/payment/robox/fail/
+ */
 $config['robox']['login']='';
 $config['robox']['password_1']='';
 $config['robox']['password_2']='';
