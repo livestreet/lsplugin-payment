@@ -3,11 +3,11 @@
 
 	<div class="topic">
 		<div class="content">
-			<h2>Платеж успешно проведен</h2>
+			<h2>{$aLang.plugin.payment_success}</h2>
 			
 			
 			{if $oPayment}
-				<br/> Номер платежа: <b>{$oPayment->getId()}</b>
+				<br/> {$aLang.plugin.payment_number}: <b>{$oPayment->getId()}</b>
 			{/if}
 		</div>
 	</div>

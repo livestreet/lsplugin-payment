@@ -32,6 +32,14 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		$this->AddEventPreg('/^wm$/i','/^result$/i','EventWmResult');
 		$this->AddEventPreg('/^wm$/i','/^success$/i','EventWmSuccess');
 		$this->AddEventPreg('/^wm$/i','/^fail$/i','EventWmFail');
+		
+		$this->AddEventPreg('/^liqpay$/i','/^result$/i','EventLiqpayResult');
+		
+		$this->AddEventPreg('/^robox$/i','/^result$/i','EventRoboxResult');
+		$this->AddEventPreg('/^robox$/i','/^success$/i','EventRoboxSuccess');
+		$this->AddEventPreg('/^robox$/i','/^fail$/i','EventRoboxFail');
+		
+		$this->AddEventPreg('/^paypro$/i','/^notify$/i','EventPayproNotify');
 	}
 
 
@@ -92,8 +100,6 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		 * Формируем описание покупки для платежной системы, добавляем в конец номер платежа (будет проще решать возможные проблемы с платежами)
 		 */
 		$sDescription=$oTarget->getTargetPaymentDescription().', №'.$oPayment->getId();
-		$sDescription1251=$this->PluginPayment_Payment_ConvertTo1251($sDescription);
-		//var_dump($sDescription1251);
 		
 		$oViewerLocal=$this->Viewer_GetLocalViewer();
 
@@ -115,12 +121,6 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 
 			$this->Viewer_AssignAjax('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.wm.tpl"));
 		} elseif ($oPayment->getType()==PluginPayment_ModulePayment::PAYMENT_TYPE_LIQPAY) {
-			$sCurrency='USD';
-			if ($oPayment->getCurrencyId()==PluginPayment_ModulePayment::PAYMENT_CURRENCY_RUR) {
-				$sCurrency='RUR';
-			} elseif ($oPayment->getCurrencyId()==PluginPayment_ModulePayment::PAYMENT_CURRENCY_UAH) {
-				$sCurrency='UAH';
-			}
 			$sXml="<request>
 				<version>1.2</version>
 				<result_url>".Router::getPath('payment').'liqpay/result/'."</result_url>
@@ -128,7 +128,7 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 				<merchant_id>".Config::Get('plugin.payment.liqpay.merchant_id')."</merchant_id>
 				<order_id>{$oPayment->getId()}</order_id>
 				<amount>".number_format($oPayment->getSum(), 2, '.', '')."</amount>
-				<currency>".$sCurrency."</currency>
+				<currency>".$this->PluginPayment_Payment_GetLiqpayCurrency($oPayment->getCurrencyId())."</currency>
 				<description>".htmlspecialchars($sDescription)."</description>				
 				<pay_way>card</pay_way> 
 			</request>";
@@ -138,7 +138,7 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 			$oViewerLocal->Assign('LIQPAY_SIGNATURE',$sSig);
 			$this->Viewer_AssignAjax('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.liqpay.tpl"));
 		} elseif ($oPayment->getType()==PluginPayment_ModulePayment::PAYMENT_TYPE_PAYPRO) {	
-			$oViewerLocal->Assign('PAYPRO_PRODUCTS',44149);
+			$oViewerLocal->Assign('PAYPRO_PRODUCTS',Config::Get('plugin.payment.paypro.products'));
 			$oViewerLocal->Assign('PAYPRO_CUSTOMFIELD1',$oPayment->getKey());
 			$oViewerLocal->Assign('PAYPRO_HASH',$this->PluginPayment_Payment_PayProGetHash($oPayment->getSum(),$sDescription));
 			
@@ -244,6 +244,10 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		$this->PluginPayment_Payment_ProcessPaymentFail($oPayment);
 	}
 	
+	/**
+	 * Обработка запроса Webmoney
+	 * Совершение платежа
+	 */
 	protected function EventWmResult() {		
 		if (getRequest('LMI_PREREQUEST')==1) {		
 			$iError=$this->PluginPayment_Payment_PreResultWm();
@@ -260,6 +264,10 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		exit();
 	}
 	
+	/**
+	 * Обработка запроса Webmoney
+	 * Редирект после успешной покупки
+	 */
 	protected function EventWmSuccess() {
 		$iError=$this->PluginPayment_Payment_SuccessWm();
 		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
@@ -278,6 +286,10 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		}
 	}
 	
+	/**
+	 * Обработка запроса Webmoney
+	 * Редирект после незавершенного платежа
+	 */
 	protected function EventWmFail() {
 		$iError=$this->PluginPayment_Payment_FailWm();
 		$this->SetTemplateAction('fail');
@@ -288,6 +300,151 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		}
 		$this->Viewer_Assign('oPayment',$oPayment);
 		$this->ProcessPaymentFail($oPayment);
+	}
+	
+	/**
+	 * Обработка запроса LiqPay
+	 */
+	protected function EventLiqpayResult() {
+		$result=$this->PluginPayment_Payment_ResultLiqpay();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		if (!$oPayment) {
+			$this->SetTemplateAction('fail');
+			return ;
+		}
+		$this->Viewer_Assign('oPayment',$oPayment);
+		
+		if (is_array($result)) {
+			if ($result[1]=='success') {
+				// проводим платеж
+				$this->MakePaymentSuccess($oPayment);
+				
+				if ($result[0]=='server_url') {
+					exit();
+				} else {
+					$this->SetTemplateAction('success');
+					$this->ProcessPaymentSuccess($oPayment);
+				}
+			} elseif ($result[1]=='success_repeat') {
+				if ($result[0]=='server_url') {
+					exit();
+				} else {
+					$this->SetTemplateAction('success');
+					$this->ProcessPaymentSuccess($oPayment);
+				}
+			} elseif ($result[1]=='wait_secure') {
+				$this->SetTemplateAction('wait');
+				if ($result[0]=='server_url') {
+					exit();
+				}
+			} elseif ($result[1]=='wait_secure_repeat') {
+				$this->SetTemplateAction('wait');
+				if ($result[0]=='server_url') {
+					exit();
+				}
+			} elseif ($result[1]=='failure') {
+				if ($result[0]=='server_url') {
+					exit();
+				} else {
+					$this->SetTemplateAction('fail');
+					$this->ProcessPaymentFail($oPayment);
+				}
+			} elseif ($result[1]=='failure_repeat') {
+				if ($result[0]=='server_url') {
+					exit();
+				} else {
+					$this->SetTemplateAction('fail');
+					$this->ProcessPaymentFail($oPayment);
+				}
+			} else {
+				$this->SetTemplateAction('fail');
+				$this->ProcessPaymentFail($oPayment);
+				return ;
+			}
+		} else {
+			$this->SetTemplateAction('fail');
+			$this->ProcessPaymentFail($oPayment);
+			return ;
+		}
+	}
+	
+	/**
+	 * Обработка запроса Робокассы
+	 * Совершение платежа
+	 */
+	protected function EventRoboxResult() {
+		$iError=$this->PluginPayment_Payment_ResultRobox();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		if ($iError==0) {
+			if (!$oPayment) {
+				$this->SetTemplateAction('fail');
+				exit();
+			}
+			
+			// проводим платеж
+			$this->MakePaymentSuccess($oPayment);
+			echo('OK'.$oPayment->getId());
+		}
+		exit();
+	}
+	
+	/**
+	 * Обработка запроса Робокассы
+	 * Редирект после успешной покупки
+	 */
+	protected function EventRoboxSuccess() {
+		$iError=$this->PluginPayment_Payment_SuccessRobox();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		if (!$oPayment) {
+			$this->SetTemplateAction('fail');
+			return ;
+		}
+		$this->Viewer_Assign('oPayment',$oPayment);
+			
+		if ($iError===0) {			
+			$this->ProcessPaymentSuccess($oPayment);
+			$this->SetTemplateAction('success');
+		} else {			
+			$this->ProcessPaymentFail($oPayment);
+			$this->SetTemplateAction('fail');
+		}		
+	}
+	
+	/**
+	 * Обработка запроса Робокассы
+	 * Редирект после незавершенного платежа
+	 */
+	protected function EventRoboxFail() {
+		$iError=$this->PluginPayment_Payment_FailRobox();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		$this->SetTemplateAction('fail');
+		if (!$oPayment) {
+			return ;
+		}
+		$this->Viewer_Assign('oPayment',$oPayment);
+		$this->ProcessPaymentFail($oPayment);
+	}
+	
+	/**
+	 * Обработка запроса от PayPro (оплата paypal)
+	 */
+	protected function EventPayproNotify() {
+		$iError=$this->PluginPayment_Payment_ResultPaypro();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		if (!$oPayment) {
+			exit();
+		}
+		
+		/**
+		 * Платеж прошел успешно
+		 */
+		if ($iError===0) {
+			// проводим платеж
+			$this->MakePaymentSuccess($oPayment);
+		} else {
+			
+		}
+		exit();
 	}
 }
 ?>

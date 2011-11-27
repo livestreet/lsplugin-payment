@@ -151,10 +151,17 @@ class PluginPayment_ModulePayment extends Module {
 		$this->oMapper=Engine::GetMapper(__CLASS__);
 	}
 	
+	/**
+	 * Возвращает список типов объектов для облаты
+	 */
 	public function GetTargetTypes() {
 		return $this->aTargetTypes;
 	}
 	
+	/**
+	 * Добавляет в разрешенные новый тип объекта, который можно оплачивать
+	 * @param unknown_type $sTargetName
+	 */
 	public function AddTargetType($sTargetName) {
 		if (!in_array($sTargetName, $this->aTargetTypes)) {
 			$this->aTargetTypes[]=$sTargetName;
@@ -223,6 +230,11 @@ class PluginPayment_ModulePayment extends Module {
 		return $this->oMapper->GetTargetByPaymentId($sId);
 	}
 	
+	/**
+	 * Логирование ошибок возникающих при оплате
+	 * @param unknown_type $iNumberError
+	 * @param unknown_type $var
+	 */
 	public function LogError($iNumberError,$var=null) {
 		if (Config::Get('plugin.payment.logs.error')) {
 			$sOldName=$this->Logger_GetFileName();
@@ -288,10 +300,18 @@ class PluginPayment_ModulePayment extends Module {
 		return $this->LogError(self::PAYMENT_ERROR_FAILED_MAKE,$oPayment);
 	}
 	
+	/**
+	 * Возвращает полный URL на страницу платежа
+	 * @param unknown_type $oPayment
+	 */
 	public function GetPaymentUrl($oPayment) {
 		return Router::GetPath('payment')."{$oPayment->getId()}/";
 	}
 	
+	/**
+	 * Получение доступных типов оплаты
+	 * @param unknown_type $oPayment
+	 */
 	public function GetAvailablePaymentType($oPayment) {
 		$aCurrency=array();
 		if ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_USD) {
@@ -415,14 +435,8 @@ class PluginPayment_ModulePayment extends Module {
 		return array_merge($aData,$aReturn);
 	}
 	
-	public function ConvertTo1251($sText) {
-		if (function_exists('iconv')) {
-			return @iconv('utf-8','windows-1251',$sText);
-		}
-		return $sText;
-	}
-	
-	
+
+		
 	public function GetWmPurseByCurrency($iCurrency) {
 		$sPurse = Config::Get ( 'plugin.payment.wm.payee_purse_wmz' );
 		if ($iCurrency == PluginPayment_ModulePayment::PAYMENT_CURRENCY_RUR) {
@@ -696,6 +710,16 @@ class PluginPayment_ModulePayment extends Module {
 	}
 	
 	
+	public function GetLiqpayCurrency($iCurrency) {
+		$sCurrency='USD';
+		if ($iCurrency==PluginPayment_ModulePayment::PAYMENT_CURRENCY_RUR) {
+			$sCurrency='RUR';
+		} elseif ($iCurrency==PluginPayment_ModulePayment::PAYMENT_CURRENCY_UAH) {
+			$sCurrency='UAH';
+		}
+		return $sCurrency;
+	}
+	
 	public function ResultLiqpay() {
 		/**
 		 * Получаем XML
@@ -717,7 +741,7 @@ class PluginPayment_ModulePayment extends Module {
 		if ($oPayment->getSum()!=(string)$oXml->amount) {
 			return $this->LogError(self::PAYMENT_ERROR_LIQPAY_RESULT_AMOUNT,array((string)$oXml->amount,$oPayment));
 		}
-		if ((string)$oXml->currency!='USD') {
+		if ((string)$oXml->currency!=$this->GetLiqpayCurrency($oPayment->getCurrencyId())) {
 			return $this->LogError(self::PAYMENT_ERROR_LIQPAY_RESULT_CURRENCY,array((string)$oXml->currency,$oPayment));
 		}
 		/**

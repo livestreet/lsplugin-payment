@@ -27,6 +27,11 @@ return array(
 	'payment_target_name_empty' => 'Неизвестный товар',
 	'payment_sum' => 'На сумму',
 	'payment_type_select' => 'Выберите сбособ оплаты',
+	'payment_error' => 'Ошибка при выполнении платежа',
+	'payment_number' => 'Номер платежа',
+	'payment_success' => 'Платеж успешно проведен',
+	'payment_wait' => 'Ваш платеж находится на проверке платежной системы',
+	'payment_wait_notice' => 'После проверки и обработки платеж будет зачислен.',
 	'payment_submit33' => '',
 );
 
