@@ -8,9 +8,9 @@
 	</author>
 	<homepage>http://livestreetcms.com</homepage>
 	<settings></settings>
-	<version>1.0</version>
+	<version>1.1</version>
 	<requires>
-		<livestreet>0.5.1</livestreet>
+		<livestreet>1.0</livestreet>
 		<plugins>
 		</plugins>
 	</requires>
