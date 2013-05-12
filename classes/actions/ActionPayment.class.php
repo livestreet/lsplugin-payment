@@ -32,6 +32,10 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		$this->AddEventPreg('/^wm$/i','/^result$/i','EventWmResult');
 		$this->AddEventPreg('/^wm$/i','/^success$/i','EventWmSuccess');
 		$this->AddEventPreg('/^wm$/i','/^fail$/i','EventWmFail');
+
+		$this->AddEventPreg('/^master$/i','/^result$/i','EventMasterResult');
+		$this->AddEventPreg('/^master$/i','/^success$/i','EventMasterSuccess');
+		$this->AddEventPreg('/^master$/i','/^fail$/i','EventMasterFail');
 		
 		$this->AddEventPreg('/^liqpay$/i','/^result$/i','EventLiqpayResult');
 		
@@ -120,6 +124,20 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 			$oViewerLocal->Assign('key',$oPayment->getKey());
 
 			$this->Viewer_AssignAjax('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.wm.tpl"));
+		} elseif ($oPayment->getType()==PluginPayment_ModulePayment::PAYMENT_TYPE_MASTER) {
+			$oViewerLocal->Assign('LMI_PAYMENT_AMOUNT',$oPayment->getSum());
+			$oViewerLocal->Assign('LMI_PAYMENT_DESC',$sDescription);
+			$oViewerLocal->Assign('LMI_PAYMENT_NO',$oPayment->getId());
+			$oViewerLocal->Assign('LMI_MERCHANT_ID',Config::Get('plugin.payment.master.mid'));
+			$oViewerLocal->Assign('LMI_SIM_MODE',0);
+			$oViewerLocal->Assign('LMI_INVOICE_CONFIRMATION_URL',Router::getPath('payment').'master/result/');
+			$oViewerLocal->Assign('LMI_PAYMENT_NOTIFICATION_URL',Router::getPath('payment').'master/result/');
+			$oViewerLocal->Assign('LMI_SUCCESS_URL',Router::getPath('payment').'master/success/');
+			$oViewerLocal->Assign('LMI_FAILURE_URL',Router::getPath('payment').'master/fail/');
+			$oViewerLocal->Assign('LMI_CURRENCY','RUB'); // 643 ISO
+			$oViewerLocal->Assign('key',$oPayment->getKey());
+
+			$this->Viewer_Assign('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.master.tpl"));
 		} elseif ($oPayment->getType()==PluginPayment_ModulePayment::PAYMENT_TYPE_LIQPAY) {
 			$sXml="<request>
 				<version>1.2</version>
@@ -301,7 +319,65 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		$this->Viewer_Assign('oPayment',$oPayment);
 		$this->ProcessPaymentFail($oPayment);
 	}
-	
+
+	/**
+	 * Обработка запроса PayMaster
+	 * Совершение платежа
+	 */
+	protected function EventMasterResult() {
+		if (getRequest('LMI_PREREQUEST')==1) {
+			$iError=$this->PluginPayment_Payment_PreResultMaster();
+			if ($iError==0) {
+				echo('YES');
+			}
+			exit();
+		}
+		$iError=$this->PluginPayment_Payment_ResultMaster();
+		if ($iError==0) {
+			// проводим платеж
+			$this->MakePaymentSuccess($this->PluginPayment_Payment_GetPaymentCurrent());
+		}
+		exit();
+	}
+
+	/**
+	 * Обработка запроса PayMaster
+	 * Редирект после успешной покупки
+	 */
+	protected function EventMasterSuccess() {
+		$iError=$this->PluginPayment_Payment_SuccessMaster();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		if (!$oPayment) {
+			$this->SetTemplateAction('fail');
+			return ;
+		}
+		$this->Viewer_Assign('oPayment',$oPayment);
+
+		if ($iError===0) {
+			$this->ProcessPaymentSuccess($oPayment);
+			$this->SetTemplateAction('success');
+		} else {
+			$this->ProcessPaymentFail($oPayment);
+			$this->SetTemplateAction('fail');
+		}
+	}
+
+	/**
+	 * Обработка запроса PayMaster
+	 * Редирект после незавершенного платежа
+	 */
+	protected function EventMasterFail() {
+		$iError=$this->PluginPayment_Payment_FailMaster();
+		$this->SetTemplateAction('fail');
+
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		if (!$oPayment) {
+			return ;
+		}
+		$this->Viewer_Assign('oPayment',$oPayment);
+		$this->ProcessPaymentFail($oPayment);
+	}
+
 	/**
 	 * Обработка запроса LiqPay
 	 */

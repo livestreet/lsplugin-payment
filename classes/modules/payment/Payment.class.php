@@ -26,6 +26,7 @@ class PluginPayment_ModulePayment extends Module {
 	 *
 	 */
 	const PAYMENT_TYPE_WM='wm';
+	const PAYMENT_TYPE_MASTER='master';
 	const PAYMENT_TYPE_PAYPAL='paypal';
 	const PAYMENT_TYPE_LIQPAY='liqpay';
 	const PAYMENT_TYPE_PAYPRO='paypro';
@@ -137,6 +138,34 @@ class PluginPayment_ModulePayment extends Module {
 	const PAYMENT_ERROR_ROBOX_FAIL_SIG=63;
 	
 	const PAYMENT_ERROR_TARGET_CHECK=64;
+
+	const PAYMENT_ERROR_MASTER_PRERESULT_NO=65;
+	const PAYMENT_ERROR_MASTER_PRERESULT_NUMBER=66;
+	const PAYMENT_ERROR_MASTER_PRERESULT_STATE=67;
+	const PAYMENT_ERROR_MASTER_PRERESULT_KEY=68;
+	const PAYMENT_ERROR_MASTER_PRERESULT_SUM=69;
+	const PAYMENT_ERROR_MASTER_PRERESULT_WID=70;
+	const PAYMENT_ERROR_MASTER_PRERESULT_CURRENCY=71;
+
+	const PAYMENT_ERROR_MASTER_RESULT_NUMBER=72;
+	const PAYMENT_ERROR_MASTER_RESULT_STATE=73;
+	const PAYMENT_ERROR_MASTER_RESULT_KEY=74;
+	const PAYMENT_ERROR_MASTER_RESULT_SUM=75;
+	const PAYMENT_ERROR_MASTER_RESULT_WID=76;
+	const PAYMENT_ERROR_MASTER_RESULT_HASH_METHOD=77;
+	const PAYMENT_ERROR_MASTER_RESULT_HASH=78;
+	const PAYMENT_ERROR_MASTER_RESULT_ADD=79;
+	const PAYMENT_ERROR_MASTER_RESULT_CURRENCY=80;
+
+	const PAYMENT_ERROR_MASTER_SUCCESS_NUMBER=81;
+	const PAYMENT_ERROR_MASTER_SUCCESS_WM=82;
+	const PAYMENT_ERROR_MASTER_SUCCESS_STATE=83;
+	const PAYMENT_ERROR_MASTER_SUCCESS_ID_NO=84;
+	const PAYMENT_ERROR_MASTER_SUCCESS_KEY=85;
+
+	const PAYMENT_ERROR_MASTER_FAIL_NUMBER=86;
+	const PAYMENT_ERROR_MASTER_FAIL_KEY=87;
+	const PAYMENT_ERROR_MASTER_FAIL_STATE=88;
 	
 	protected $aTargetTypes=array();
 	
@@ -205,7 +234,15 @@ class PluginPayment_ModulePayment extends Module {
 	public function GetWmByPaymentId($sId) {
 		return $this->oMapper->GetWmByPaymentId($sId);
 	}
-	
+
+	public function AddMaster($oWm) {
+		return $this->oMapper->AddMaster($oWm);
+	}
+
+	public function GetMasterByPaymentId($sId) {
+		return $this->oMapper->GetMasterByPaymentId($sId);
+	}
+
 	public function AddLiqpay($oLiqpay) {
 		return $this->oMapper->AddLiqpay($oLiqpay);
 	}
@@ -321,7 +358,7 @@ class PluginPayment_ModulePayment extends Module {
 		if ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_USD) {
 			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_PAYPRO,self::PAYMENT_TYPE_ROBOX);
 		} elseif ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_RUR) {
-			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_ROBOX);
+			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_ROBOX,self::PAYMENT_TYPE_MASTER);
 		} elseif ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_UAH) {
 			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY);
 		}
@@ -589,8 +626,154 @@ class PluginPayment_ModulePayment extends Module {
 		$this->UpdatePayment($oPayment);
 		return 0;
 	}
-	
-	
+
+	public function PreResultMaster() {
+		/**
+		 * Делаем предварительную проверку данных для оплаты
+		 */
+		if (getRequest('LMI_PREREQUEST',null,'post')!=1) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_PRERESULT_NO,getRequest('LMI_PREREQUEST',null,'post'));
+		}
+		if (!($oPayment=$this->GetPaymentById(getRequest('LMI_PAYMENT_NO',null,'post')))) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_PRERESULT_NUMBER,getRequest('LMI_PAYMENT_NO',null,'post'));
+		}
+		$this->oPaymentCurrent=$oPayment;
+		if ($oPayment->getKey()!=getRequest('key',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_PRERESULT_KEY,array(getRequest('key',null,'post'),$oPayment));
+		}
+		if ($oPayment->getSum()!=getRequest('LMI_PAYMENT_AMOUNT',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_PRERESULT_SUM,array(getRequest('LMI_PAYMENT_AMOUNT',null,'post'),$oPayment));
+		}
+		if (strtoupper(getRequest('LMI_CURRENCY','','post'))!='RUB') {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_PRERESULT_CURRENCY,array(getRequest('LMI_CURRENCY',null,'post'),$oPayment));
+		}
+		if (Config::Get('plugin.payment.master.mid')!=getRequest('LMI_MERCHANT_ID',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_PRERESULT_WID,array(Config::Get('plugin.payment.master.mid'),getRequest('LMI_MERCHANT_ID',null,'post'),$oPayment));
+		}
+		/**
+		 * Проверяем состояние нового платежа
+		 */
+		if ($oPayment->getState()!=self::PAYMENT_STATE_NEW) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_PRERESULT_STATE,$oPayment);
+		}
+		$oPayment->setState(self::PAYMENT_STATE_PRE);
+		$this->UpdatePayment($oPayment);
+		return 0;
+	}
+
+	public function ResultMaster() {
+		/**
+		 * Сначала проверяем правильность номера оплаты, ключа, суммы и кошелька
+		 */
+		if (!($oPayment=$this->GetPaymentById(getRequest('LMI_PAYMENT_NO',null,'post')))) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_RESULT_NUMBER,getRequest('LMI_PAYMENT_NO',null,'post'));
+		}
+		$this->oPaymentCurrent=$oPayment;
+		if ($oPayment->getKey()!=getRequest('key',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_RESULT_KEY,array(getRequest('key',null,'post'),$oPayment));
+		}
+		if ($oPayment->getSum()!=getRequest('LMI_PAYMENT_AMOUNT',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_RESULT_SUM,array(getRequest('LMI_PAYMENT_AMOUNT',null,'post'),$oPayment));
+		}
+		if (strtoupper(getRequest('LMI_CURRENCY','','post'))!='RUB') {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_RESULT_CURRENCY,array(getRequest('LMI_CURRENCY',null,'post'),$oPayment));
+		}
+		if (Config::Get('plugin.payment.master.mid')!=getRequest('LMI_MERCHANT_ID',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_RESULT_WID,array(Config::Get('plugin.payment.master.mid'),getRequest('LMI_MERCHANT_ID',null,'post'),$oPayment));
+		}
+		/**
+		 * Проверяем наличие предварительного запроса
+		 */
+		if ($oPayment->getState()!=self::PAYMENT_STATE_PRE) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_RESULT_STATE,$oPayment);
+		}
+		/**
+		 * Проверяем контрольную сумму
+		 */
+		$sCheckStr=getRequest('LMI_MERCHANT_ID','','post').';'.
+			getRequest('LMI_PAYMENT_NO','','post').';'.
+			getRequest('LMI_SYS_PAYMENT_ID','','post').';'.
+			getRequest('LMI_SYS_PAYMENT_DATE','','post').';'.
+			getRequest('LMI_PAYMENT_AMOUNT','','post').';'.
+			getRequest('LMI_CURRENCY','','post').';'.
+			getRequest('LMI_PAID_AMOUNT','','post').';'.
+			getRequest('LMI_PAID_CURRENCY','','post').';'.
+			getRequest('LMI_PAYMENT_SYSTEM','','post').';'.
+			getRequest('LMI_SIM_MODE','','post').';'.
+			Config::Get('plugin.payment.master.secret_key');
+		if (Config::Get('plugin.payment.master.hash_method')=='md5') {
+			if (base64_encode(md5($sCheckStr, true))!=getRequest('LMI_HASH',null,'post')) {
+				return $this->LogError(self::PAYMENT_ERROR_MASTER_RESULT_HASH,array($sCheckStr,getRequest('LMI_HASH',null,'post'),$oPayment));
+			}
+		} else {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_RESULT_HASH_METHOD,array(Config::Get('plugin.payment.master.hash_method'),$oPayment));
+		}
+		/**
+		 * Все проверки были успешными, добавляем запись о произошедшем платеже
+		 */
+		$oWm=Engine::GetEntity('PluginPayment_ModulePayment_EntityPaymentMaster');
+		$oWm->setLmiMerchantId(getRequest('LMI_MERCHANT_ID','','post'));
+		$oWm->setLmiPaymentNo(getRequest('LMI_PAYMENT_NO','','post'));
+		$oWm->setLmiSysPaymentId(getRequest('LMI_SYS_PAYMENT_ID','','post'));
+		$oWm->setLmiSysPaymentDate(getRequest('LMI_SYS_PAYMENT_DATE','','post'));
+		$oWm->setLmiPaymentAmount(getRequest('LMI_PAYMENT_AMOUNT','','post'));
+		$oWm->setLmiCurrency(getRequest('LMI_CURRENCY','','post'));
+		$oWm->setLmiPaidAmount(getRequest('LMI_PAID_AMOUNT','','post'));
+		$oWm->setLmiPaidCurrency(getRequest('LMI_PAID_CURRENCY','','post'));
+		$oWm->setLmiPaymentSystem(getRequest('LMI_PAYMENT_SYSTEM','','post'));
+		$oWm->setLmiSimMode(getRequest('LMI_SIM_MODE','','post'));
+		$oWm->setLmiPaymentDesc(getRequest('LMI_PAYMENT_DESC','','post'));
+		$oWm->setPaymentId($oPayment->getId());
+		if ($this->AddMaster($oWm)) {
+			$oPayment->setState(self::PAYMENT_STATE_SOLD);
+			$this->UpdatePayment($oPayment);
+			return 0;
+		}
+		return $this->LogError(self::PAYMENT_ERROR_MASTER_RESULT_ADD,array($oWm,$oPayment));
+	}
+
+	public function SuccessMaster() {
+		if (!($oPayment=$this->GetPaymentById(getRequest('LMI_PAYMENT_NO',null,'post')))) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_SUCCESS_NUMBER,getRequest('LMI_PAYMENT_NO',null,'post'));
+		}
+		$this->oPaymentCurrent=$oPayment;
+		if ($oPayment->getKey()!=getRequest('key',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_SUCCESS_KEY,array(getRequest('key',null,'post'),$oPayment));
+		}
+		if ($oPayment->getState()!=self::PAYMENT_STATE_SOLD) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_SUCCESS_STATE,$oPayment);
+		}
+		if (!($oMaster=$this->GetMasterByPaymentId($oPayment->getId()))) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_SUCCESS_WM,$oPayment);
+		}
+		if ($oMaster->getLmiSysPaymentId()!=getRequest('LMI_SYS_PAYMENT_ID',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_SUCCESS_ID_NO,array($oPayment,getRequest('LMI_SYS_PAYMENT_ID',null,'post')));
+		}
+
+		$oPayment->setState(self::PAYMENT_STATE_COMPLETE);
+		$oPayment->setDateComplete(date("Y-m-d H:i:s"));
+		$this->UpdatePayment($oPayment);
+		return 0;
+	}
+
+	public function FailMaster() {
+		if (!($oPayment=$this->GetPaymentById(getRequest('LMI_PAYMENT_NO',null,'post')))) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_FAIL_NUMBER,getRequest('LMI_PAYMENT_NO',null,'post'));
+		}
+		$this->oPaymentCurrent=$oPayment;
+		if ($oPayment->getKey()!=getRequest('key',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_FAIL_KEY,array(getRequest('key',null,'post'),$oPayment));
+		}
+		if ($oPayment->getState()!=self::PAYMENT_STATE_PRE and $oPayment->getState()!=self::PAYMENT_STATE_NEW) {
+			return $this->LogError(self::PAYMENT_ERROR_MASTER_FAIL_STATE,$oPayment);
+		}
+
+		$oPayment->setState(self::PAYMENT_STATE_FAILED);
+		$oPayment->setDateComplete(date("Y-m-d H:i:s"));
+		$this->UpdatePayment($oPayment);
+		return 0;
+	}
+
 	public function ResultPaypro() {
 		/**
 		 * Проверяем IP процессинга PayPro

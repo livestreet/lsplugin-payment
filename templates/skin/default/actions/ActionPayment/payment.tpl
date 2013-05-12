@@ -30,7 +30,11 @@
 					<input type="radio" name="payment-type" value="paypro" id="payment-type-paypro" class="input-radio" /> <label for="payment-type-paypro"><img src="{$aTemplateWebPathPlugin.payment}images/paypal.png" alt="PayPal" title="PayPal" /></label>
 					<br /><br />
 				{/if}
-				
+
+				{if in_array(PluginPayment_ModulePayment::PAYMENT_TYPE_MASTER,$aPaymentTypeAvailable)}
+					<input type="radio" name="payment-type" value="master" id="payment-type-master" checked class="input-radio" /> <label for="payment-type-master">PayMaster</label>
+					<br /><br />
+				{/if}
 				
 				<input type="hidden" id="payment_id" value="{$oPayment->getId()}">				
 				<input type="submit" name="" value="{$aLang.plugin.payment.payment_submit}" onclick="ls.plugin.payment.processing();">

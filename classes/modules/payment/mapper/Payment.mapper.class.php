@@ -62,6 +62,14 @@ class PluginPayment_ModulePayment_MapperPayment extends Mapper {
 		}
 		return null;
 	}
+
+	public function GetMasterByPaymentId($sId) {
+		$sql = "SELECT * FROM ".Config::Get('plugin.payment.table.payment_master')." WHERE payment_id = ? ";
+		if ($aRow=$this->oDb->selectRow($sql,$sId)) {
+			return Engine::GetEntity('PluginPayment_ModulePayment_EntityPaymentMaster',$aRow);
+		}
+		return null;
+	}
 	
 	public function GetCurrencyById($sId) {
 		$sql = "SELECT * FROM ".Config::Get('plugin.payment.table.payment_currency')." WHERE id = ? ";
@@ -81,6 +89,19 @@ class PluginPayment_ModulePayment_MapperPayment extends Mapper {
 		{
 			return true;
 		}		
+		return false;
+	}
+
+	public function AddMaster($oWm) {
+		$sql = "INSERT INTO ".Config::Get('plugin.payment.table.payment_master')."
+			SET payment_id=?, LMI_MERCHANT_ID=?, LMI_PAYMENT_NO=?, LMI_SYS_PAYMENT_ID=?, LMI_SYS_PAYMENT_DATE=?, LMI_PAYMENT_AMOUNT=?,
+				LMI_CURRENCY=?, LMI_PAID_AMOUNT=?, LMI_PAID_CURRENCY=?, LMI_PAYMENT_SYSTEM=?, LMI_SIM_MODE=?, LMI_PAYMENT_DESC=?
+		";
+		if ($this->oDb->query($sql,$oWm->getPaymentId(),$oWm->getLmiMerchantId(),$oWm->getLmiPaymentNo(),$oWm->getLmiSysPaymentId(),$oWm->getLmiSysPaymentDate(),
+							  $oWm->getLmiPaymentAmount(),$oWm->getLmiCurrency(),$oWm->getLmiPaidAmount(),$oWm->getLmiPaidCurrency(),$oWm->getLmiPaymentSystem(),$oWm->getLmiSimMode(),$oWm->getLmiPaymentDesc())===0)
+		{
+			return true;
+		}
 		return false;
 	}
 	
