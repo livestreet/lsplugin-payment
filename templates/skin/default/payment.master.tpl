@@ -4,7 +4,6 @@
 	<input type="hidden" name="LMI_INVOICE_CONFIRMATION_URL" value="{$LMI_INVOICE_CONFIRMATION_URL}">
 	<input type="hidden" name="LMI_PAYMENT_NOTIFICATION_URL" value="{$LMI_PAYMENT_NOTIFICATION_URL}">
 	<input type="hidden" name="LMI_FAILURE_URL" value="{$LMI_FAILURE_URL}">
-	<input type="hidden" name="LMI_PAYER_EMAIL" value="{$LMI_PAYER_EMAIL}">
 
     <input type="hidden" name="LMI_PAYMENT_AMOUNT" value="{$LMI_PAYMENT_AMOUNT}">
     <input type="hidden" name="LMI_PAYMENT_NO" value="{$LMI_PAYMENT_NO}">
