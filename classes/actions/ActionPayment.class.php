@@ -137,7 +137,7 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 			$oViewerLocal->Assign('LMI_CURRENCY','RUB'); // 643 ISO
 			$oViewerLocal->Assign('key',$oPayment->getKey());
 
-			$this->Viewer_Assign('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.master.tpl"));
+			$this->Viewer_AssignAjax('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.master.tpl"));
 		} elseif ($oPayment->getType()==PluginPayment_ModulePayment::PAYMENT_TYPE_LIQPAY) {
 			$sXml="<request>
 				<version>1.2</version>
