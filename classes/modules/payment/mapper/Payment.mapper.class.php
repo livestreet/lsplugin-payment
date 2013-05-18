@@ -30,10 +30,10 @@ class PluginPayment_ModulePayment_MapperPayment extends Mapper {
 	
 	public function UpdatePayment($oPayment) {
 		$sql = "UPDATE ".Config::Get('plugin.payment.table.payment')." 
-			SET date_complete = ?, `state` = ? 		
+			SET date_complete = ?, `state` = ? 	, `type` = ?
 			WHERE id = ?d
 		";			
-		if ($this->oDb->query($sql,$oPayment->getDateComplete(),$oPayment->getState(),$oPayment->getId())) {
+		if ($this->oDb->query($sql,$oPayment->getDateComplete(),$oPayment->getState(),$oPayment->getType(),$oPayment->getId())) {
 			return true;
 		}		
 		return false;
