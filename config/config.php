@@ -60,6 +60,7 @@ $config['robox']['password_2']='';
 $config['master']['mid']=''; // Уникальный идентификатор сайта
 $config['master']['hash_method']='md5'; // Метод подсчета контрольной суммы, на данный момент поддерживается только "md5"
 $config['master']['secret_key']=''; // Секретный ключ
+$config['master']['testing']=true; // При переходе в РАБОЧИЙ режим(в интерфейсе мерчанта), необходимо сменить значение на false
 
 return $config;
 ?>

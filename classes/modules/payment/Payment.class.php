@@ -690,6 +690,10 @@ class PluginPayment_ModulePayment extends Module {
 		/**
 		 * Проверяем контрольную сумму
 		 */
+		$sLmiSimMode=getRequest('LMI_SIM_MODE','','post');
+		if (!Config::Get('plugin.payment.master.testing')) {
+			$sLmiSimMode='';
+		}
 		$sCheckStr=getRequest('LMI_MERCHANT_ID','','post').';'.
 			getRequest('LMI_PAYMENT_NO','','post').';'.
 			getRequest('LMI_SYS_PAYMENT_ID','','post').';'.
@@ -699,7 +703,7 @@ class PluginPayment_ModulePayment extends Module {
 			getRequest('LMI_PAID_AMOUNT','','post').';'.
 			getRequest('LMI_PAID_CURRENCY','','post').';'.
 			getRequest('LMI_PAYMENT_SYSTEM','','post').';'.
-			getRequest('LMI_SIM_MODE','','post').';'.
+			$sLmiSimMode.';'.
 			Config::Get('plugin.payment.master.secret_key');
 		if (Config::Get('plugin.payment.master.hash_method')=='md5') {
 			if (base64_encode(md5($sCheckStr, true))!=getRequest('LMI_HASH',null,'post')) {
