@@ -63,6 +63,14 @@ class PluginPayment_ModulePayment_MapperPayment extends Mapper {
 		return null;
 	}
 
+	public function GetW1ByPaymentId($sId) {
+		$sql = "SELECT * FROM ".Config::Get('plugin.payment.table.payment_w1')." WHERE payment_id = ? ";
+		if ($aRow=$this->oDb->selectRow($sql,$sId)) {
+			return Engine::GetEntity('PluginPayment_ModulePayment_EntityPaymentW1',$aRow);
+		}
+		return null;
+	}
+
 	public function GetMasterByPaymentId($sId) {
 		$sql = "SELECT * FROM ".Config::Get('plugin.payment.table.payment_master')." WHERE payment_id = ? ";
 		if ($aRow=$this->oDb->selectRow($sql,$sId)) {
@@ -89,6 +97,19 @@ class PluginPayment_ModulePayment_MapperPayment extends Mapper {
 		{
 			return true;
 		}		
+		return false;
+	}
+
+	public function AddW1($oW1) {
+		$sql = "INSERT INTO ".Config::Get('plugin.payment.table.payment_w1')."
+			SET payment_id=?, WMI_MERCHANT_ID=?, WMI_PAYMENT_AMOUNT=?, WMI_CURRENCY_ID=?, WMI_TO_USER_ID=?, WMI_PAYMENT_NO=?,
+				WMI_ORDER_ID=?, WMI_CREATE_DATE=?, WMI_UPDATE_DATE=?
+		";
+		if ($this->oDb->query($sql,$oW1->getPaymentId(),$oW1->getWmiMerchantId(),$oW1->getWmiPaymentAmount(),$oW1->getWmiCurrencyId(),$oW1->getWmiToUserId(),
+							  $oW1->getWmiPaymentNo(),$oW1->getWmiOrderId(),$oW1->getWmiCreateDate(),$oW1->getWmiUpdateDate())===0)
+		{
+			return true;
+		}
 		return false;
 	}
 

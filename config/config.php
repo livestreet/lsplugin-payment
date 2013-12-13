@@ -26,10 +26,13 @@ $config['table']['payment_target']    = '___db.table.prefix___'.'payment_target'
 Config::Set('router.page.payment', 'PluginPayment_ActionPayment');
 
 
-$config['type']=array('wm','liqpay','paypro','robox','master'); // список разрешенных типов оплаты
+$config['type']=array('wm','liqpay','paypro','robox','master','w1'); // список разрешенных типов оплаты
 $config['logs']['access']='payment_access.log'; // null либо имя файла для лога доступа
 $config['logs']['error']='payment_error.log'; // null либо имя файла для лога ошибок
 
+/**
+ * Настройка Webmoney
+ */
 $config['wm']['payee_purse_wmz']=''; // WMZ кошелек продавца, активируется в настройках WM Merchant Interface
 $config['wm']['payee_purse_wmr']=''; // WMR кошелек продавца, активируется в настройках WM Merchant Interface
 $config['wm']['payee_purse_wmu']=''; // WMU кошелек продавца, активируется в настройках WM Merchant Interface
@@ -37,9 +40,15 @@ $config['wm']['wmid']=''; // WMID  продавца
 $config['wm']['secret_key']=''; // Секретный ключ, указывается в настройках WM Merchant Interface
 $config['wm']['hash_method']='md5'; // Метод подсчета контрольной суммы, на данный момент поддерживается только "md5", указывается в настройках WM Merchant Interface
 
+/**
+ * Настройка LiqPay
+ */
 $config['liqpay']['merchant_id']='';
 $config['liqpay']['signature']='';
 
+/**
+ * Настройки PayPro
+ */
 $config['paypro']['key']='';
 $config['paypro']['products']=''; // Номер продукта, у этого продукта должен быть прописан урл информирования о платеже: http://вашсайт/payment/paypro/notify/
 $config['paypro']['min_sum']=10; // Минимальная сумма USD которую можно оплатить через PayPro
@@ -61,6 +70,16 @@ $config['master']['mid']=''; // Уникальный идентификатор 
 $config['master']['hash_method']='md5'; // Метод подсчета контрольной суммы, на данный момент поддерживается только "md5"
 $config['master']['secret_key']=''; // Секретный ключ
 $config['master']['testing']=true; // При переходе в РАБОЧИЙ режим(в интерфейсе мерчанта), необходимо сменить значение на false
+
+/**
+ * Настройки Единого кошелька
+ * В настройках магазина в интерфейсе Единого кошелька необходимо прописать "Адрес для оповещений":
+ * http://вашсайт/payment/w1/result/
+ *
+ * Алгоритм шифрования нежно выбрать MD5
+ */
+$config['w1']['merchant_id']=''; // Номер вашего кошелька
+$config['w1']['signature']='';
 
 return $config;
 ?>

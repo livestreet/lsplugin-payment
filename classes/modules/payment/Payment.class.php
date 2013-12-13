@@ -31,6 +31,7 @@ class PluginPayment_ModulePayment extends Module {
 	const PAYMENT_TYPE_LIQPAY='liqpay';
 	const PAYMENT_TYPE_PAYPRO='paypro';
 	const PAYMENT_TYPE_ROBOX='robox';
+	const PAYMENT_TYPE_W1='w1';
 	const PAYMENT_TYPE_MANUAL='manual';
 	
 	/**
@@ -166,7 +167,30 @@ class PluginPayment_ModulePayment extends Module {
 	const PAYMENT_ERROR_MASTER_FAIL_NUMBER=86;
 	const PAYMENT_ERROR_MASTER_FAIL_KEY=87;
 	const PAYMENT_ERROR_MASTER_FAIL_STATE=88;
-	
+
+
+	const PAYMENT_ERROR_W1_RESULT_ORDER_STATE=89;
+	const PAYMENT_ERROR_W1_RESULT_NUMBER=90;
+	const PAYMENT_ERROR_W1_RESULT_KEY=91;
+	const PAYMENT_ERROR_W1_RESULT_SUM=92;
+	const PAYMENT_ERROR_W1_RESULT_CURRENCY=93;
+	const PAYMENT_ERROR_W1_RESULT_STATE=94;
+	const PAYMENT_ERROR_W1_RESULT_SIG=95;
+	const PAYMENT_ERROR_W1_RESULT_ADD=96;
+
+	const PAYMENT_ERROR_W1_SUCCESS_KEY=97;
+	const PAYMENT_ERROR_W1_SUCCESS_SUM=98;
+	const PAYMENT_ERROR_W1_SUCCESS_CURRENCY=99;
+	const PAYMENT_ERROR_W1_SUCCESS_STATE=100;
+	const PAYMENT_ERROR_W1_SUCCESS_NUMBER=101;
+	const PAYMENT_ERROR_W1_SUCCESS_W1=102;
+
+	const PAYMENT_ERROR_W1_FAIL_SUM=103;
+	const PAYMENT_ERROR_W1_FAIL_CURRENCY=104;
+	const PAYMENT_ERROR_W1_FAIL_STATE=105;
+	const PAYMENT_ERROR_W1_FAIL_NUMBER=106;
+	const PAYMENT_ERROR_W1_FAIL_KEY=107;
+
 	protected $aTargetTypes=array();
 	
 	protected $oMapper;
@@ -233,6 +257,14 @@ class PluginPayment_ModulePayment extends Module {
 	
 	public function GetWmByPaymentId($sId) {
 		return $this->oMapper->GetWmByPaymentId($sId);
+	}
+
+	public function AddW1($oWm) {
+		return $this->oMapper->AddW1($oWm);
+	}
+
+	public function GetW1ByPaymentId($sId) {
+		return $this->oMapper->GetW1ByPaymentId($sId);
 	}
 
 	public function AddMaster($oWm) {
@@ -356,11 +388,11 @@ class PluginPayment_ModulePayment extends Module {
 	public function GetAvailablePaymentType($oPayment) {
 		$aCurrency=array();
 		if ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_USD) {
-			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_PAYPRO,self::PAYMENT_TYPE_ROBOX);
+			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_PAYPRO,self::PAYMENT_TYPE_ROBOX,self::PAYMENT_TYPE_W1);
 		} elseif ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_RUR) {
-			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_ROBOX,self::PAYMENT_TYPE_MASTER);
+			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_ROBOX,self::PAYMENT_TYPE_MASTER,self::PAYMENT_TYPE_W1);
 		} elseif ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_UAH) {
-			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY);
+			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_W1);
 		}
 		if (Config::Get('plugin.payment.paypro.min_sum')>$oPayment->getSum()) {
 			$aCurrency=array_diff($aCurrency, array(self::PAYMENT_TYPE_PAYPRO));
@@ -1200,7 +1232,142 @@ class PluginPayment_ModulePayment extends Module {
 		$this->UpdatePayment($oPayment);
 		return 0;
 	}
-	
+
+
+	public function ResultW1() {
+		/**
+		 * Сначала проверяем правильность номера оплаты, ключа, суммы и кошелька
+		 */
+		if (strtoupper(getRequest('WMI_ORDER_STATE'))!='ACCEPTED') {
+			return $this->LogError(self::PAYMENT_ERROR_W1_RESULT_ORDER_STATE,getRequest('WMI_ORDER_STATE',null,'post'));
+		}
+		if (!($oPayment=$this->GetPaymentById(getRequest('WMI_PAYMENT_NO',null,'post')))) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_RESULT_NUMBER,getRequest('WMI_PAYMENT_NO',null,'post'));
+		}
+		$this->oPaymentCurrent=$oPayment;
+		if ($oPayment->getKey()!=getRequest('key',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_RESULT_KEY,array(getRequest('key',null,'post'),$oPayment));
+		}
+		if ($oPayment->getSum()!=getRequest('WMI_PAYMENT_AMOUNT',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_RESULT_SUM,array(getRequest('WMI_PAYMENT_AMOUNT',null,'post'),$oPayment));
+		}
+		$iCode=$this->GetW1CurrencyCodeByCurrency($oPayment->getCurrencyId());
+		if ($iCode!=getRequest('WMI_CURRENCY_ID',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_RESULT_CURRENCY,array($iCode,getRequest('WMI_CURRENCY_ID',null,'post'),$oPayment));
+		}
+
+		/**
+		 * Проверяем наличие предварительного запроса
+		 */
+		if ($oPayment->getState()!=self::PAYMENT_STATE_NEW) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_RESULT_STATE,$oPayment);
+		}
+		/**
+		 * Проверяем контрольную сумму
+		 */
+		$aParams=array();
+		$aPostData=$_POST;
+		foreach($aPostData as $sName => $value) {
+			if ($sName!=="WMI_SIGNATURE") {
+				$aParams[$sName]=$value;
+			}
+		}
+		uksort($aParams,"strcasecmp");
+		$values="";
+		foreach($aParams as $value) {
+			$value=iconv("utf-8","windows-1251",$value);
+			$values.=$value;
+		}
+		$sSig=base64_encode(pack("H*",md5($values.Config::Get('plugin.payment.w1.signature'))));
+		if ($sSig!=getRequest('WMI_SIGNATURE')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_RESULT_SIG,array($sSig,getRequest('WMI_SIGNATURE',null,'post'),$oPayment));
+		}
+		/**
+		 * Все проверки были успешными, добавляем запись о произошедшем платеже
+		 */
+		$oW1=Engine::GetEntity('PluginPayment_ModulePayment_EntityPaymentW1');
+		$oW1->setWmiMerchantId(getRequest('WMI_MERCHANT_ID','','post'));
+		$oW1->setWmiPaymentAmount(getRequest('WMI_PAYMENT_AMOUNT','','post'));
+		$oW1->setWmiCurrencyId(getRequest('WMI_CURRENCY_ID','','post'));
+		$oW1->setWmiToUserId(getRequest('WMI_TO_USER_ID','','post'));
+		$oW1->setWmiPaymentNo(getRequest('WMI_PAYMENT_NO','','post'));
+		$oW1->setWmiOrderId(getRequest('WMI_ORDER_ID','','post'));
+		$oW1->setWmiCreateDate(getRequest('WMI_CREATE_DATE','','post'));
+		$oW1->setWmiUpdateDate(getRequest('WMI_UPDATE_DATE','','post'));
+		$oW1->setPaymentId($oPayment->getId());
+		if ($this->AddW1($oW1)) {
+			$oPayment->setState(self::PAYMENT_STATE_SOLD);
+			$this->UpdatePayment($oPayment);
+			return 0;
+		}
+		return $this->LogError(self::PAYMENT_ERROR_W1_RESULT_ADD,array($oW1,$oPayment));
+	}
+
+	public function SuccessW1() {
+		if (!($oPayment=$this->GetPaymentById(getRequest('WMI_PAYMENT_NO',null,'post')))) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_SUCCESS_NUMBER,getRequest('WMI_PAYMENT_NO',null,'post'));
+		}
+		$this->oPaymentCurrent=$oPayment;
+		if ($oPayment->getKey()!=getRequest('key',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_SUCCESS_KEY,array(getRequest('key',null,'post'),$oPayment));
+		}
+		if (!($oW1=$this->GetW1ByPaymentId($oPayment->getId()))) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_SUCCESS_W1,$oPayment);
+		}
+		if ($oPayment->getSum()!=getRequest('WMI_PAYMENT_AMOUNT',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_SUCCESS_SUM,array(getRequest('WMI_PAYMENT_AMOUNT',null,'post'),$oPayment));
+		}
+		$iCode=$this->GetW1CurrencyCodeByCurrency($oPayment->getCurrencyId());
+		if ($iCode!=getRequest('WMI_CURRENCY_ID',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_SUCCESS_CURRENCY,array($iCode,getRequest('WMI_CURRENCY_ID',null,'post'),$oPayment));
+		}
+		if ($oPayment->getState()!=self::PAYMENT_STATE_SOLD) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_SUCCESS_STATE,$oPayment);
+		}
+
+		$oPayment->setState(self::PAYMENT_STATE_COMPLETE);
+		$oPayment->setDateComplete(date("Y-m-d H:i:s"));
+		$this->UpdatePayment($oPayment);
+		return 0;
+	}
+
+	public function FailW1() {
+		if (!($oPayment=$this->GetPaymentById(getRequest('WMI_PAYMENT_NO',null,'post')))) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_FAIL_NUMBER,getRequest('WMI_PAYMENT_NO',null,'post'));
+		}
+		$this->oPaymentCurrent=$oPayment;
+		if ($oPayment->getKey()!=getRequest('key',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_FAIL_KEY,array(getRequest('key',null,'post'),$oPayment));
+		}
+		if ($oPayment->getSum()!=getRequest('WMI_PAYMENT_AMOUNT',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_FAIL_SUM,array(getRequest('WMI_PAYMENT_AMOUNT',null,'post'),$oPayment));
+		}
+		$iCode=$this->GetW1CurrencyCodeByCurrency($oPayment->getCurrencyId());
+		if ($iCode!=getRequest('WMI_CURRENCY_ID',null,'post')) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_FAIL_CURRENCY,array($iCode,getRequest('WMI_CURRENCY_ID',null,'post'),$oPayment));
+		}
+
+		if ($oPayment->getState()!=self::PAYMENT_STATE_NEW) {
+			return $this->LogError(self::PAYMENT_ERROR_W1_FAIL_STATE,$oPayment);
+		}
+
+		$oPayment->setState(self::PAYMENT_STATE_FAILED);
+		$oPayment->setDateComplete(date("Y-m-d H:i:s"));
+		$this->UpdatePayment($oPayment);
+		return 0;
+	}
+
+
+	public function GetW1CurrencyCodeByCurrency($iCurrency) {
+		if ($iCurrency == PluginPayment_ModulePayment::PAYMENT_CURRENCY_USD) {
+			return 840;
+		}
+		if ($iCurrency == PluginPayment_ModulePayment::PAYMENT_CURRENCY_UAH) {
+			return 980;
+		}
+		return 643;
+	}
+
 	public function PayProGetHash($fPrice,$sName) {
 		$sHash = "";
 		$s="price={$fPrice}^^^name={$sName}";

@@ -202,6 +202,25 @@ CREATE TABLE IF NOT EXISTS `prefix_payment_master` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Структура таблицы `prefix_payment_w1`
+--
+
+CREATE TABLE IF NOT EXISTS `prefix_payment_w1` (
+  `payment_id` int(11) NOT NULL,
+  `WMI_MERCHANT_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_PAYMENT_AMOUNT` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_CURRENCY_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_TO_USER_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_PAYMENT_NO` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_ORDER_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_CREATE_DATE` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_UPDATE_DATE` varchar(50) CHARACTER SET latin1 NOT NULL,
+  PRIMARY KEY (`payment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+--
 -- Ограничения внешнего ключа сохраненных таблиц
 --
 
@@ -234,3 +253,9 @@ ALTER TABLE `prefix_payment_wm`
 --
 ALTER TABLE `prefix_payment_master`
   ADD CONSTRAINT `prefix_payment_master_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `prefix_payment_w1`
+--
+ALTER TABLE `prefix_payment_w1`
+  ADD CONSTRAINT `prefix_payment_w1_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;

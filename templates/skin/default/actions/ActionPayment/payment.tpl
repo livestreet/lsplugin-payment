@@ -25,6 +25,11 @@
 					<input type="radio" name="payment-type" value="robox" id="payment-type-robox" class="input-radio" /> <label for="payment-type-robox"><img src="{$aTemplateWebPathPlugin.payment}images/yandex.png" alt="Яндекс.Деньги" title="Яндекс.Деньги" /></label>
 					<br /><br />
 				{/if}
+
+				{if in_array(PluginPayment_ModulePayment::PAYMENT_TYPE_W1,$aPaymentTypeAvailable)}
+					<input type="radio" name="payment-type" value="w1" id="payment-type-w1" class="input-radio" /> <label for="payment-type-w1"><img src="{$aTemplateWebPathPlugin.payment}images/w1.png" alt="Единый кошелек" title="Единый кошелек" /></label>
+					<br /><br />
+				{/if}
 				
 				{if in_array(PluginPayment_ModulePayment::PAYMENT_TYPE_PAYPRO,$aPaymentTypeAvailable)}	
 					<input type="radio" name="payment-type" value="paypro" id="payment-type-paypro" class="input-radio" /> <label for="payment-type-paypro"><img src="{$aTemplateWebPathPlugin.payment}images/paypal.png" alt="PayPal" title="PayPal" /></label>

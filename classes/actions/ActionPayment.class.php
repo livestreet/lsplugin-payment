@@ -43,6 +43,10 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		$this->AddEventPreg('/^robox$/i','/^success$/i','EventRoboxSuccess');
 		$this->AddEventPreg('/^robox$/i','/^fail$/i','EventRoboxFail');
 
+		$this->AddEventPreg('/^w1$/i','/^result$/i','EventW1Result');
+		$this->AddEventPreg('/^w1$/i','/^success$/i','EventW1Success');
+		$this->AddEventPreg('/^w1$/i','/^fail$/i','EventW1Fail');
+
 		$this->AddEventPreg('/^paypro$/i','/^notify$/i','EventPayproNotify');
 	}
 
@@ -138,6 +142,35 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 			$oViewerLocal->Assign('key',$oPayment->getKey());
 
 			$this->Viewer_AssignAjax('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.master.tpl"));
+		} elseif ($oPayment->getType()==PluginPayment_ModulePayment::PAYMENT_TYPE_W1) {
+			$aFields=array(
+				'WMI_PAYMENT_AMOUNT'=>$oPayment->getSum(),
+				'WMI_PAYMENT_DESC_BASE64'=>"BASE64:".base64_encode($sDescription),
+				'WMI_PAYMENT_NO'=>$oPayment->getId(),
+				'WMI_CURRENCY_ID'=>$this->PluginPayment_Payment_GetW1CurrencyCodeByCurrency($oPayment->getCurrencyId()),
+				'WMI_MERCHANT_ID'=>Config::Get('plugin.payment.w1.merchant_id'),
+				'WMI_SUCCESS_URL'=>Router::getPath('payment').'w1/success/',
+				'WMI_FAIL_URL'=>Router::getPath('payment').'w1/fail/',
+				'key'=>$oPayment->getKey(),
+			);
+
+			uksort($aFields, "strcasecmp");
+			$sFieldValues = "";
+			foreach($aFields as $sParam=>$sValue) {
+				if (is_array($sValue)) {
+					foreach($sValue as $v) {
+						$v = iconv("utf-8", "windows-1251", $v);
+						$sFieldValues .= $v;
+					}
+				} else {
+					$sFieldValues.=iconv("utf-8", "windows-1251", $sValue);
+					$oViewerLocal->Assign($sParam,$sValue);
+				}
+			}
+			$sSig = base64_encode(pack("H*", md5($sFieldValues.Config::Get('plugin.payment.w1.signature'))));
+			$oViewerLocal->Assign('WMI_SIGNATURE',$sSig);
+
+			$this->Viewer_AssignAjax('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.w1.tpl"));
 		} elseif ($oPayment->getType()==PluginPayment_ModulePayment::PAYMENT_TYPE_LIQPAY) {
 			$sXml="<request>
 				<version>1.2</version>
@@ -545,6 +578,77 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 			return $mRes;
 		}
 	}
+
+
+
+	/**
+	 * Обработка запроса Единого кошелька
+	 * Совершение платежа
+	 */
+	protected function EventW1Result() {
+		$iError=$this->PluginPayment_Payment_ResultW1();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		if ($iError==0) {
+			if (!$oPayment) {
+				echo('WMI_RESULT=RETRY&WMI_DESCRIPTION='.urlencode('Not found payment'));
+				exit();
+			}
+
+			// проводим платеж
+			$this->MakePaymentSuccess($oPayment);
+			echo('WMI_RESULT=OK');
+		}
+		echo('WMI_RESULT=RETRY&WMI_DESCRIPTION='.urlencode('Code error: '.$iError));
+		exit();
+	}
+
+	/**
+	 * Обработка запроса Единого кошелька
+	 * Редирект после успешной покупки
+	 */
+	protected function EventW1Success() {
+		$iError=$this->PluginPayment_Payment_SuccessW1();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		if (!$oPayment) {
+			$this->SetTemplateAction('fail');
+			return ;
+		}
+		$this->Viewer_Assign('oPayment',$oPayment);
+
+		if ($iError===0) {
+			$mRes=$this->ProcessPaymentSuccess($oPayment);
+			if ($mRes=='next') {
+				return $mRes;
+			}
+			$this->SetTemplateAction('success');
+		} else {
+			$mRes=$this->ProcessPaymentFail($oPayment);
+			if ($mRes=='next') {
+				return $mRes;
+			}
+			$this->SetTemplateAction('fail');
+		}
+	}
+
+	/**
+	 * Обработка запроса Единого кошелька
+	 * Редирект после незавершенного платежа
+	 */
+	protected function EventW1Fail() {
+		$iError=$this->PluginPayment_Payment_FailW1();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		$this->SetTemplateAction('fail');
+		if (!$oPayment) {
+			return ;
+		}
+		$this->Viewer_Assign('oPayment',$oPayment);
+		$mRes=$this->ProcessPaymentFail($oPayment);
+		if ($mRes=='next') {
+			return $mRes;
+		}
+	}
+
+
 
 	/**
 	 * Обработка запроса от PayPro (оплата paypal)
