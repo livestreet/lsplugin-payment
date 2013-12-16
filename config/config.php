@@ -17,6 +17,7 @@
 
 $config['table']['payment']             = '___db.table.prefix___'.'payment';
 $config['table']['payment_wm']          = '___db.table.prefix___'.'payment_wm';
+$config['table']['payment_w1']          = '___db.table.prefix___'.'payment_w1';
 $config['table']['payment_master']          = '___db.table.prefix___'.'payment_master';
 $config['table']['payment_liqpay']          = '___db.table.prefix___'.'payment_liqpay';
 $config['table']['payment_paypro']          = '___db.table.prefix___'.'payment_paypro';

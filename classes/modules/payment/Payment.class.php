@@ -1275,7 +1275,7 @@ class PluginPayment_ModulePayment extends Module {
 		uksort($aParams,"strcasecmp");
 		$values="";
 		foreach($aParams as $value) {
-			$value=iconv("utf-8","windows-1251",$value);
+			//$value=iconv("utf-8","windows-1251",$value);
 			$values.=$value;
 		}
 		$sSig=base64_encode(pack("H*",md5($values.Config::Get('plugin.payment.w1.signature'))));
