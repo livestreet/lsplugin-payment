@@ -145,7 +145,7 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		} elseif ($oPayment->getType()==PluginPayment_ModulePayment::PAYMENT_TYPE_W1) {
 			$aFields=array(
 				'WMI_PAYMENT_AMOUNT'=>$oPayment->getSum(),
-				'WMI_PAYMENT_DESC_BASE64'=>"BASE64:".base64_encode($sDescription),
+				'WMI_DESCRIPTION'=>"BASE64:".base64_encode($sDescription),
 				'WMI_PAYMENT_NO'=>$oPayment->getId(),
 				'WMI_CURRENCY_ID'=>$this->PluginPayment_Payment_GetW1CurrencyCodeByCurrency($oPayment->getCurrencyId()),
 				'WMI_MERCHANT_ID'=>Config::Get('plugin.payment.w1.merchant_id'),

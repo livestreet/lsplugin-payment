@@ -19,7 +19,7 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 CREATE TABLE IF NOT EXISTS `prefix_payment` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `key` varchar(32) NOT NULL,
-  `type` enum('wm','paypal','liqpay','paypro','robox','master') DEFAULT NULL,
+  `type` enum('wm','paypal','liqpay','paypro','robox','master','w1') DEFAULT NULL,
   `sum` float(9,2) NOT NULL,
   `currency_id` int(11) NOT NULL,
   `date_add` datetime NOT NULL,
