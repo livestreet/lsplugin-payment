@@ -556,6 +556,10 @@ class PluginPayment_ModulePayment extends Module {
 			if (strtoupper(md5($sCheckStr))!=getRequest('LMI_HASH',null,'post')) {
 				return $this->LogError(self::PAYMENT_ERROR_WM_RESULT_HASH,array($sCheckStr,getRequest('LMI_HASH',null,'post'),$oPayment));
 			}
+        } elseif (Config::Get('plugin.payment.wm.hash_method')=='sha256') {
+            if (strtoupper(hash('sha256',$sCheckStr))!=getRequest('LMI_HASH',null,'post')) {
+                return $this->LogError(self::PAYMENT_ERROR_WM_RESULT_HASH,array($sCheckStr,getRequest('LMI_HASH',null,'post'),$oPayment));
+            }
 		} else {
 			return $this->LogError(self::PAYMENT_ERROR_WM_RESULT_HASH_METHOD,array(Config::Get('plugin.payment.wm.hash_method'),$oPayment));
 		}
