@@ -1,5 +1,11 @@
-{assign var="noSidebar" value=true}
-{include file='header.tpl'}
+{extends file='layouts/layout.base.tpl'}
+
+{block name='layout_options' prepend}
+	{$layoutNoSidebar = true}
+{/block}
+
+
+{block name='layout_content'}
 
 	<div class="payment_content">
 		<h2>{$aLang.plugin.payment.payment_success}</h2>
@@ -10,4 +16,4 @@
 		{/if}
 	</div>
 
-{include file='footer.tpl'}
+{/block}

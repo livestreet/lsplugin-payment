@@ -28,8 +28,23 @@ Config::Set('router.page.payment', 'PluginPayment_ActionPayment');
 
 
 $config['type']=array('wm','liqpay','paypro','robox','master','w1'); // список разрешенных типов оплаты
-$config['logs']['access']='payment_access.log'; // null либо имя файла для лога доступа
-$config['logs']['error']='payment_error.log'; // null либо имя файла для лога ошибок
+$config['logs']['error']=true; // логирование ошибок
+$config['$root$']['sys']['logs']['instances']['payment'] = array(
+    'handlers'   => array(
+        'Stream' => array(
+            '___path.application.server___/logs/payment_error.log',
+            'debug',
+            'formatter' => array(
+                'Line',
+                '___sys.logs.format___'
+            )
+        ),
+    ),
+    'processors' => array(
+        'Uid',
+        'ProcessId',
+    ));
+
 
 /**
  * Настройка Webmoney
