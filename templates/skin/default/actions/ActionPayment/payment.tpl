@@ -32,7 +32,12 @@
 				{/if}
 				
 				{if in_array(PluginPayment_ModulePayment::PAYMENT_TYPE_PAYPRO,$aPaymentTypeAvailable)}	
-					<input type="radio" name="payment-type" value="paypro" id="payment-type-paypro" class="input-radio" /> <label for="payment-type-paypro"><img src="{$aTemplateWebPathPlugin.payment}images/paypal.png" alt="PayPal" title="PayPal" /></label>
+					<input type="radio" name="payment-type" value="paypro" id="payment-type-paypro" class="input-radio" /> <label for="payment-type-paypro">PayPro</label>
+					<br /><br />
+				{/if}
+
+				{if in_array(PluginPayment_ModulePayment::PAYMENT_TYPE_PAYPAL,$aPaymentTypeAvailable)}
+					<input type="radio" name="payment-type" value="paypal" id="payment-type-paypal" class="input-radio" /> <label for="payment-type-paypal"><img src="{$aTemplateWebPathPlugin.payment}images/paypal.png" alt="PayPal" title="PayPal" /></label>
 					<br /><br />
 				{/if}
 

@@ -21,13 +21,14 @@ $config['table']['payment_w1']          = '___db.table.prefix___'.'payment_w1';
 $config['table']['payment_master']          = '___db.table.prefix___'.'payment_master';
 $config['table']['payment_liqpay']          = '___db.table.prefix___'.'payment_liqpay';
 $config['table']['payment_paypro']          = '___db.table.prefix___'.'payment_paypro';
+$config['table']['payment_paypal']          = '___db.table.prefix___'.'payment_paypal';
 $config['table']['payment_currency']    = '___db.table.prefix___'.'payment_currency';
 $config['table']['payment_target']    = '___db.table.prefix___'.'payment_target';
 
 Config::Set('router.page.payment', 'PluginPayment_ActionPayment');
 
 
-$config['type']=array('wm','liqpay','paypro','robox','master','w1'); // список разрешенных типов оплаты
+$config['type']=array('wm','liqpay','paypro','robox','master','w1','paypal'); // список разрешенных типов оплаты
 $config['logs']['access']='payment_access.log'; // null либо имя файла для лога доступа
 $config['logs']['error']='payment_error.log'; // null либо имя файла для лога ошибок
 
@@ -82,5 +83,11 @@ $config['master']['testing']=true; // При переходе в РАБОЧИЙ 
 $config['w1']['merchant_id']=''; // Номер вашего кошелька
 $config['w1']['signature']='';
 
+/**
+ * Настройка PayPal
+ * IPN URL: http://вашсайт/payment/paypal/result/
+ */
+$config['paypal']['mail']=''; // Ваш емайл продавца в PayPal
+$config['paypal']['locale']='RU'; // Код страны, к которой привязаны платежи
+
 return $config;
-?>

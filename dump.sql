@@ -1,14 +1,18 @@
 -- phpMyAdmin SQL Dump
--- version 3.2.4
+-- version 4.2.7.1
 -- http://www.phpmyadmin.net
 --
 -- Хост: localhost
--- Время создания: Ноя 27 2011 г., 06:36
--- Версия сервера: 5.1.44
--- Версия PHP: 5.3.1
+-- Время создания: Сен 16 2015 г., 17:13
+-- Версия сервера: 5.5.39
+-- Версия PHP: 5.4.31
 
-SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
 
+--
+-- База данных: `payment`
+--
 
 -- --------------------------------------------------------
 
@@ -17,7 +21,7 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 --
 
 CREATE TABLE IF NOT EXISTS `prefix_payment` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+`id` int(11) NOT NULL,
   `key` varchar(32) NOT NULL,
   `type` enum('wm','paypal','liqpay','paypro','robox','master','w1') DEFAULT NULL,
   `sum` float(9,2) NOT NULL,
@@ -25,12 +29,8 @@ CREATE TABLE IF NOT EXISTS `prefix_payment` (
   `date_add` datetime NOT NULL,
   `date_complete` datetime DEFAULT NULL,
   `ip` varchar(20) NOT NULL,
-  `state` tinyint(4) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `currency_id` (`currency_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
-
-
+  `state` tinyint(4) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -39,10 +39,9 @@ CREATE TABLE IF NOT EXISTS `prefix_payment` (
 --
 
 CREATE TABLE IF NOT EXISTS `prefix_payment_currency` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=4 ;
+`id` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 --
 -- Дамп данных таблицы `prefix_payment_currency`
@@ -63,10 +62,61 @@ CREATE TABLE IF NOT EXISTS `prefix_payment_liqpay` (
   `payment_id` int(11) NOT NULL,
   `transaction_id` varchar(500) NOT NULL,
   `pay_way` varchar(50) NOT NULL,
-  `sender_phone` varchar(50) NOT NULL,
-  PRIMARY KEY (`payment_id`)
+  `sender_phone` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `prefix_payment_master`
+--
+
+CREATE TABLE IF NOT EXISTS `prefix_payment_master` (
+  `payment_id` int(11) NOT NULL,
+  `LMI_MERCHANT_ID` varchar(50) NOT NULL,
+  `LMI_PAYMENT_NO` varchar(50) NOT NULL,
+  `LMI_SYS_PAYMENT_ID` varchar(50) NOT NULL,
+  `LMI_SYS_PAYMENT_DATE` varchar(50) NOT NULL,
+  `LMI_PAYMENT_AMOUNT` varchar(50) NOT NULL,
+  `LMI_CURRENCY` varchar(50) NOT NULL,
+  `LMI_PAID_AMOUNT` varchar(50) NOT NULL,
+  `LMI_PAID_CURRENCY` varchar(50) NOT NULL,
+  `LMI_PAYMENT_SYSTEM` varchar(50) NOT NULL,
+  `LMI_SIM_MODE` varchar(50) NOT NULL,
+  `LMI_PAYMENT_DESC` varchar(500) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `prefix_payment_paypal`
+--
+
+CREATE TABLE IF NOT EXISTS `prefix_payment_paypal` (
+  `payment_id` int(11) NOT NULL,
+  `mc_gross` varchar(50) NOT NULL,
+  `payer_id` varchar(50) NOT NULL,
+  `tax` varchar(50) NOT NULL,
+  `payment_date` varchar(100) NOT NULL,
+  `payment_status` varchar(50) NOT NULL,
+  `first_name` varchar(100) NOT NULL,
+  `mc_fee` varchar(50) NOT NULL,
+  `custom` varchar(250) NOT NULL,
+  `payer_status` varchar(50) NOT NULL,
+  `business` varchar(250) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  `verify_sign` varchar(250) NOT NULL,
+  `payer_email` varchar(250) NOT NULL,
+  `txn_id` varchar(50) NOT NULL,
+  `payment_type` varchar(50) NOT NULL,
+  `last_name` varchar(50) NOT NULL,
+  `receiver_email` varchar(250) NOT NULL,
+  `receiver_id` varchar(50) NOT NULL,
+  `txn_type` varchar(50) NOT NULL,
+  `mc_currency` varchar(10) NOT NULL,
+  `residence_country` varchar(10) NOT NULL,
+  `ipn_track_id` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -138,10 +188,8 @@ CREATE TABLE IF NOT EXISTS `prefix_payment_paypro` (
   `PPG_EXTERNAL_CALL` varchar(250) NOT NULL,
   `PAYPRO_GLOBAL` varchar(250) NOT NULL,
   `TEST_MODE` varchar(250) NOT NULL,
-  `REQUEST_TYPE` varchar(250) NOT NULL,
-  PRIMARY KEY (`payment_id`)
+  `REQUEST_TYPE` varchar(250) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 
 -- --------------------------------------------------------
 
@@ -153,13 +201,26 @@ CREATE TABLE IF NOT EXISTS `prefix_payment_target` (
   `payment_id` int(11) NOT NULL,
   `target_id` int(11) NOT NULL,
   `target_type` varchar(20) NOT NULL,
-  `state` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`payment_id`),
-  KEY `target_id` (`target_id`,`target_type`),
-  KEY `state` (`state`),
-  KEY `target_type` (`target_type`)
+  `state` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `prefix_payment_w1`
+--
+
+CREATE TABLE IF NOT EXISTS `prefix_payment_w1` (
+  `payment_id` int(11) NOT NULL,
+  `WMI_MERCHANT_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_PAYMENT_AMOUNT` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_CURRENCY_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_TO_USER_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_PAYMENT_NO` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_ORDER_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_CREATE_DATE` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `WMI_UPDATE_DATE` varchar(50) CHARACTER SET latin1 NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -177,49 +238,81 @@ CREATE TABLE IF NOT EXISTS `prefix_payment_wm` (
   `LMI_PAYER_PURSE` varchar(15) NOT NULL,
   `LMI_PAYER_WM` varchar(15) NOT NULL,
   `LMI_HASH` varchar(32) NOT NULL,
-  `LMI_SYS_TRANS_DATE` varchar(17) NOT NULL,
-  PRIMARY KEY (`payment_id`)
+  `LMI_SYS_TRANS_DATE` varchar(17) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Структура таблицы `prefix_payment_master`
+-- Indexes for dumped tables
 --
 
-CREATE TABLE IF NOT EXISTS `prefix_payment_master` (
-  `payment_id` int(11) NOT NULL,
-  `LMI_MERCHANT_ID` varchar(50) NOT NULL,
-  `LMI_PAYMENT_NO` varchar(50) NOT NULL,
-  `LMI_SYS_PAYMENT_ID` varchar(50) NOT NULL,
-  `LMI_SYS_PAYMENT_DATE` varchar(50) NOT NULL,
-  `LMI_PAYMENT_AMOUNT` varchar(50) NOT NULL,
-  `LMI_CURRENCY` varchar(50) NOT NULL,
-  `LMI_PAID_AMOUNT` varchar(50) NOT NULL,
-  `LMI_PAID_CURRENCY` varchar(50) NOT NULL,
-  `LMI_PAYMENT_SYSTEM` varchar(50) NOT NULL,
-  `LMI_SIM_MODE` varchar(50) NOT NULL,
-  `LMI_PAYMENT_DESC` varchar(500) NOT NULL,
-  PRIMARY KEY (`payment_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+--
+-- Indexes for table `prefix_payment`
+--
+ALTER TABLE `prefix_payment`
+ ADD PRIMARY KEY (`id`), ADD KEY `currency_id` (`currency_id`);
 
 --
--- Структура таблицы `prefix_payment_w1`
+-- Indexes for table `prefix_payment_currency`
+--
+ALTER TABLE `prefix_payment_currency`
+ ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `prefix_payment_liqpay`
+--
+ALTER TABLE `prefix_payment_liqpay`
+ ADD PRIMARY KEY (`payment_id`);
+
+--
+-- Indexes for table `prefix_payment_master`
+--
+ALTER TABLE `prefix_payment_master`
+ ADD PRIMARY KEY (`payment_id`);
+
+--
+-- Indexes for table `prefix_payment_paypal`
+--
+ALTER TABLE `prefix_payment_paypal`
+ ADD PRIMARY KEY (`payment_id`);
+
+--
+-- Indexes for table `prefix_payment_paypro`
+--
+ALTER TABLE `prefix_payment_paypro`
+ ADD PRIMARY KEY (`payment_id`);
+
+--
+-- Indexes for table `prefix_payment_target`
+--
+ALTER TABLE `prefix_payment_target`
+ ADD PRIMARY KEY (`payment_id`), ADD KEY `target_id` (`target_id`,`target_type`), ADD KEY `state` (`state`), ADD KEY `target_type` (`target_type`);
+
+--
+-- Indexes for table `prefix_payment_w1`
+--
+ALTER TABLE `prefix_payment_w1`
+ ADD PRIMARY KEY (`payment_id`);
+
+--
+-- Indexes for table `prefix_payment_wm`
+--
+ALTER TABLE `prefix_payment_wm`
+ ADD PRIMARY KEY (`payment_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
 --
 
-CREATE TABLE IF NOT EXISTS `prefix_payment_w1` (
-  `payment_id` int(11) NOT NULL,
-  `WMI_MERCHANT_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `WMI_PAYMENT_AMOUNT` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `WMI_CURRENCY_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `WMI_TO_USER_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `WMI_PAYMENT_NO` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `WMI_ORDER_ID` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `WMI_CREATE_DATE` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `WMI_UPDATE_DATE` varchar(50) CHARACTER SET latin1 NOT NULL,
-  PRIMARY KEY (`payment_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-
+--
+-- AUTO_INCREMENT for table `prefix_payment`
+--
+ALTER TABLE `prefix_payment`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `prefix_payment_currency`
+--
+ALTER TABLE `prefix_payment_currency`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=4;
 --
 -- Ограничения внешнего ключа сохраненных таблиц
 --
@@ -228,34 +321,34 @@ CREATE TABLE IF NOT EXISTS `prefix_payment_w1` (
 -- Ограничения внешнего ключа таблицы `prefix_payment_liqpay`
 --
 ALTER TABLE `prefix_payment_liqpay`
-  ADD CONSTRAINT `prefix_payment_liqpay_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `prefix_payment_paypro`
---
-ALTER TABLE `prefix_payment_paypro`
-  ADD CONSTRAINT `prefix_payment_paypro_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `prefix_payment_target`
---
-ALTER TABLE `prefix_payment_target`
-  ADD CONSTRAINT `prefix_payment_target_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `prefix_payment_wm`
---
-ALTER TABLE `prefix_payment_wm`
-  ADD CONSTRAINT `prefix_payment_wm_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ADD CONSTRAINT `prefix_payment_liqpay_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `prefix_payment_master`
 --
 ALTER TABLE `prefix_payment_master`
-  ADD CONSTRAINT `prefix_payment_master_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ADD CONSTRAINT `prefix_payment_master_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `prefix_payment_paypro`
+--
+ALTER TABLE `prefix_payment_paypro`
+ADD CONSTRAINT `prefix_payment_paypro_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `prefix_payment_target`
+--
+ALTER TABLE `prefix_payment_target`
+ADD CONSTRAINT `prefix_payment_target_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `prefix_payment_w1`
 --
 ALTER TABLE `prefix_payment_w1`
-  ADD CONSTRAINT `prefix_payment_w1_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ADD CONSTRAINT `prefix_payment_w1_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `prefix_payment_wm`
+--
+ALTER TABLE `prefix_payment_wm`
+ADD CONSTRAINT `prefix_payment_wm_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `prefix_payment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;

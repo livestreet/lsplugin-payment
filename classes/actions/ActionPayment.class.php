@@ -48,6 +48,10 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		$this->AddEventPreg('/^w1$/i','/^fail$/i','EventW1Fail');
 
 		$this->AddEventPreg('/^paypro$/i','/^notify$/i','EventPayproNotify');
+
+		$this->AddEventPreg('/^paypal$/i','/^result$/i','EventPaypalResult');
+		$this->AddEventPreg('/^paypal$/i','/^success$/i','EventPaypalSuccess');
+		$this->AddEventPreg('/^paypal$/i','/^fail$/i','EventPaypalFail');
 	}
 
 
@@ -204,6 +208,18 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 			$oViewerLocal->Assign('shp_key',$oPayment->getKey());
 
 			$this->Viewer_AssignAjax('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.robox.tpl"));
+		} elseif ($oPayment->getType()==PluginPayment_ModulePayment::PAYMENT_TYPE_PAYPAL) {
+			$oViewerLocal->Assign('business',Config::Get('plugin.payment.paypal.mail'));
+			$oViewerLocal->Assign('item_name',$sDescription);
+			$oViewerLocal->Assign('amount',number_format($oPayment->getSum(), 2, '.', ''));
+			$oViewerLocal->Assign('currency_code',$this->PluginPayment_Payment_GetPaypalCurrencyCodeByCurrency($oPayment->getCurrencyId()));
+			$oViewerLocal->Assign('locale',Config::Get('plugin.payment.paypal.locale'));
+			$oViewerLocal->Assign('return',Router::getPath('payment').'paypal/success/');
+			$oViewerLocal->Assign('cancel_return',Router::getPath('payment').'paypal/fail/');
+			$oViewerLocal->Assign('notify_url',Router::getPath('payment').'paypal/result/');
+			$oViewerLocal->Assign('customData',json_encode(array('key'=>$oPayment->getKey(),'id'=>$oPayment->getId())));
+
+			$this->Viewer_AssignAjax('sFormText',$oViewerLocal->Fetch(Plugin::GetTemplatePath(__CLASS__)."payment.paypal.tpl"));
 		} else {
 			$this->Message_AddErrorSingle($this->Lang_Get('plugin.payment.error_payment_available_type'),$this->Lang_Get('error'));
 			return;
@@ -671,5 +687,53 @@ class PluginPayment_ActionPayment extends ActionPlugin {
 		}
 		exit();
 	}
+
+	/**
+	 * Обработка запроса Paypal
+	 * Совершение платежа
+	 */
+	protected function EventPaypalResult() {
+		$iError=$this->PluginPayment_Payment_ResultPaypal();
+		if ($iError==0) {
+			// проводим платеж
+			$this->MakePaymentSuccess($this->PluginPayment_Payment_GetPaymentCurrent());
+		}
+		exit();
+	}
+
+	/**
+	 * Обработка запроса Paypal
+	 * Редирект после оплаты, но ДО ее подтверждения со стороны платежной системы
+	 */
+	protected function EventPaypalSuccess() {
+		$iError=$this->PluginPayment_Payment_SuccessPaypal();
+		$oPayment=$this->PluginPayment_Payment_GetPaymentCurrent();
+		if (!$oPayment) {
+			$this->SetTemplateAction('fail');
+			return ;
+		}
+		$this->Viewer_Assign('oPayment',$oPayment);
+
+		if ($iError===0) {
+			$mRes=$this->ProcessPaymentSuccess($oPayment);
+			if ($mRes=='next') {
+				return $mRes;
+			}
+			$this->SetTemplateAction('wait');
+		} else {
+			$mRes=$this->ProcessPaymentFail($oPayment);
+			if ($mRes=='next') {
+				return $mRes;
+			}
+			$this->SetTemplateAction('fail');
+		}
+	}
+
+	/**
+	 * Обработка запроса Paypal
+	 * Редирект после незавершенного платежа
+	 */
+	protected function EventPaypalFail() {
+		$this->SetTemplateAction('fail');
+	}
 }
-?>

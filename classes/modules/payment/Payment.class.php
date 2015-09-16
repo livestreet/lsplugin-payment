@@ -191,6 +191,18 @@ class PluginPayment_ModulePayment extends Module {
 	const PAYMENT_ERROR_W1_FAIL_NUMBER=106;
 	const PAYMENT_ERROR_W1_FAIL_KEY=107;
 
+	const PAYMENT_ERROR_PAYPAL_SUCCESS_KEY=301;
+
+	const PAYMENT_ERROR_PAYPAL_RESULT_VALIDATE=302;
+	const PAYMENT_ERROR_PAYPAL_RESULT_KEY=303;
+	const PAYMENT_ERROR_PAYPAL_RESULT_STATUS=304;
+	const PAYMENT_ERROR_PAYPAL_RESULT_SUM=305;
+	const PAYMENT_ERROR_PAYPAL_RESULT_CURRENCY=306;
+	const PAYMENT_ERROR_PAYPAL_RESULT_STATE=307;
+	const PAYMENT_ERROR_PAYPAL_RESULT_TRANSACTION=308;
+	const PAYMENT_ERROR_PAYPAL_RESULT_ADD=309;
+	const PAYMENT_ERROR_PAYPAL_RESULT_MAIL=310;
+
 	protected $aTargetTypes=array();
 	
 	protected $oMapper;
@@ -282,7 +294,15 @@ class PluginPayment_ModulePayment extends Module {
 	public function AddPaypro($oPaypro) {
 		return $this->oMapper->AddPaypro($oPaypro);
 	}
-	
+
+	public function AddPaypal($oPaypal) {
+		return $this->oMapper->AddPaypal($oPaypal);
+	}
+
+	public function GetPaypalByTxnId($sId) {
+		return $this->oMapper->GetPaypalByTxnId($sId);
+	}
+
 	public function GetLiqpayByPaymentId($sId) {
 		return $this->oMapper->GetLiqpayByPaymentId($sId);
 	}
@@ -388,9 +408,9 @@ class PluginPayment_ModulePayment extends Module {
 	public function GetAvailablePaymentType($oPayment) {
 		$aCurrency=array();
 		if ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_USD) {
-			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_PAYPRO,self::PAYMENT_TYPE_ROBOX,self::PAYMENT_TYPE_W1);
+			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_PAYPRO,self::PAYMENT_TYPE_ROBOX,self::PAYMENT_TYPE_W1,self::PAYMENT_TYPE_PAYPAL);
 		} elseif ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_RUR) {
-			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_ROBOX,self::PAYMENT_TYPE_MASTER,self::PAYMENT_TYPE_W1);
+			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_ROBOX,self::PAYMENT_TYPE_MASTER,self::PAYMENT_TYPE_W1,self::PAYMENT_TYPE_PAYPAL);
 		} elseif ($oPayment->getCurrencyId()==self::PAYMENT_CURRENCY_UAH) {
 			$aCurrency=array(self::PAYMENT_TYPE_WM,self::PAYMENT_TYPE_LIQPAY,self::PAYMENT_TYPE_W1);
 		}
@@ -1384,6 +1404,110 @@ class PluginPayment_ModulePayment extends Module {
 		mcrypt_module_close($td);
 		return base64_encode($sHash);
 	}
-	
+
+	public function GetPaypalCurrencyCodeByCurrency($iCurrency) {
+		if ($iCurrency == PluginPayment_ModulePayment::PAYMENT_CURRENCY_RUR) {
+			return 'RUB';
+		}
+		return 'USD';
+	}
+
+	public function SuccessPaypal() {
+		$oPayment=null;
+		$sCustom=getRequest('custom',null,'post');
+		if ($sCustom and $aCustomData=@json_decode($sCustom,true) and isset($aCustomData['id']) and isset($aCustomData['key'])) {
+			$oPayment=$this->GetPaymentById((string)$aCustomData['id']);
+		}
+
+		if (!$oPayment or $oPayment->getKey()!=$aCustomData['key']) {
+			return $this->LogError(self::PAYMENT_ERROR_PAYPAL_SUCCESS_KEY,array($aCustomData,$oPayment));
+		}
+		$this->oPaymentCurrent=$oPayment;
+		return 0;
+	}
+
+	public function ResultPaypal() {
+		$listener = new \WadeShuler\PhpPaypalIpn\IpnListener();
+		//$listener->use_sandbox = true;
+		$listener->verify_ssl = false;
+
+		if ($verified = $listener->processIpn())
+		{
+			$oPayment=null;
+			$sCustom=getRequest('custom',null,'post');
+			if ($sCustom and $aCustomData=@json_decode($sCustom,true) and isset($aCustomData['id']) and isset($aCustomData['key'])) {
+				$oPayment=$this->GetPaymentById((string)$aCustomData['id']);
+			}
+
+			if (!$oPayment or $oPayment->getKey()!=$aCustomData['key']) {
+				return $this->LogError(self::PAYMENT_ERROR_PAYPAL_RESULT_KEY,$sCustom);
+			}
+			$this->oPaymentCurrent=$oPayment;
+
+			if (getRequest('payment_status',null,'post') != 'Completed') {
+				return $this->LogError(self::PAYMENT_ERROR_PAYPAL_RESULT_STATUS,$sCustom);
+			}
+
+			if (getRequest('receiver_email',null,'post') != Config::Get('plugin.payment.paypal.mail')) {
+				return $this->LogError(self::PAYMENT_ERROR_PAYPAL_RESULT_MAIL,$sCustom);
+			}
+
+			if (getRequest('mc_gross',null,'post') != number_format($oPayment->getSum(), 2, '.', '')) {
+				return $this->LogError(self::PAYMENT_ERROR_PAYPAL_RESULT_SUM,$sCustom);
+			}
+
+			if (getRequest('mc_currency',null,'post') != $this->GetPaypalCurrencyCodeByCurrency($oPayment->getCurrencyId())) {
+				return $this->LogError(self::PAYMENT_ERROR_PAYPAL_RESULT_CURRENCY,$sCustom);
+			}
+
+			if ($this->GetPaypalByTxnId(getRequest('txn_id', '', 'post'))) {
+				return $this->LogError(self::PAYMENT_ERROR_PAYPAL_RESULT_TRANSACTION,getRequest('txn_id', '', 'post'));
+			}
+
+			/**
+			 * Проверяем наличие предварительного запроса
+			 */
+			if ($oPayment->getState()!=self::PAYMENT_STATE_NEW) {
+				return $this->LogError(self::PAYMENT_ERROR_PAYPAL_RESULT_STATE,$oPayment);
+			}
+
+			/**
+			 * Все проверки были успешными, добавляем запись о произошедшем платеже
+			 */
+			$oPaypal = Engine::GetEntity('PluginPayment_ModulePayment_EntityPaymentPaypal', array(
+				'mc_gross'          => getRequest('mc_gross', '', 'post'),
+				'payer_id'          => getRequest('payer_id', '', 'post'),
+				'tax'               => getRequest('tax', '', 'post'),
+				'payment_date'      => getRequest('payment_date', '', 'post'),
+				'payment_status'    => getRequest('payment_status', '', 'post'),
+				'first_name'        => getRequest('first_name', '', 'post'),
+				'mc_fee'            => getRequest('mc_fee', '', 'post'),
+				'custom'            => getRequest('custom', '', 'post'),
+				'payer_status'      => getRequest('payer_status', '', 'post'),
+				'business'          => getRequest('business', '', 'post'),
+				'quantity'          => getRequest('quantity', '', 'post'),
+				'verify_sign'       => getRequest('verify_sign', '', 'post'),
+				'payer_email'       => getRequest('payer_email', '', 'post'),
+				'txn_id'            => getRequest('txn_id', '', 'post'),
+				'payment_type'      => getRequest('payment_type', '', 'post'),
+				'last_name'         => getRequest('last_name', '', 'post'),
+				'receiver_email'    => getRequest('receiver_email', '', 'post'),
+				'receiver_id'       => getRequest('receiver_id', '', 'post'),
+				'txn_type'          => getRequest('txn_type', '', 'post'),
+				'mc_currency'       => getRequest('mc_currency', '', 'post'),
+				'residence_country' => getRequest('residence_country', '', 'post'),
+				'ipn_track_id'      => getRequest('ipn_track_id', '', 'post'),
+			));
+			$oPaypal->setPaymentId($oPayment->getId());
+
+			if ($this->AddPaypal($oPaypal)) {
+				$oPayment->setState(self::PAYMENT_STATE_SOLD);
+				$this->UpdatePayment($oPayment);
+				return 0;
+			}
+			return $this->LogError(self::PAYMENT_ERROR_PAYPAL_RESULT_ADD,array($oPaypal,$oPayment));
+		} else {
+			return $this->LogError(self::PAYMENT_ERROR_PAYPAL_RESULT_VALIDATE,array($listener->getErrors(),$_REQUEST));
+		}
+	}
 }
-?>

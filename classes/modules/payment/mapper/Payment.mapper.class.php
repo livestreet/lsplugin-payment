@@ -78,6 +78,14 @@ class PluginPayment_ModulePayment_MapperPayment extends Mapper {
 		}
 		return null;
 	}
+
+	public function GetPaypalByTxnId($sId) {
+		$sql = "SELECT * FROM ".Config::Get('plugin.payment.table.payment_paypal')." WHERE txn_id = ? limit 0,1";
+		if ($aRow=$this->oDb->selectRow($sql,$sId)) {
+			return Engine::GetEntity('PluginPayment_ModulePayment_EntityPaymentPaypal',$aRow);
+		}
+		return null;
+	}
 	
 	public function GetCurrencyById($sId) {
 		$sql = "SELECT * FROM ".Config::Get('plugin.payment.table.payment_currency')." WHERE id = ? ";
@@ -150,6 +158,14 @@ class PluginPayment_ModulePayment_MapperPayment extends Mapper {
 		if ($this->oDb->query($sql,$oPaypro->_getData())===0) {
 			return true;
 		}		
+		return false;
+	}
+
+	public function AddPaypal($oPaypal) {
+		$sql = "INSERT INTO ".Config::Get('plugin.payment.table.payment_paypal')." SET ?a ";
+		if ($this->oDb->query($sql,$oPaypal->_getData())===0) {
+			return true;
+		}
 		return false;
 	}
 	
