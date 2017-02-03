@@ -19,27 +19,29 @@
  * Запрещаем напрямую через браузер обращение к этому файлу.
  */
 if (!class_exists('Plugin')) {
-	die('Hacking attemp!');
+    die('Hacking attempt!');
 }
 
-class PluginTestpay extends Plugin {
-	
-	protected $aInherits=array(       
-       'module'  => array('PluginPayment_ModulePayment'=>'PluginTestpay_ModulePayment'),
+class PluginTestpay extends Plugin
+{
+
+    protected $aInherits = array(
+        'module' => array('PluginPayment_ModulePayment' => 'PluginTestpay_ModulePayment'),
     );
 
-	
-	/**
-	 * Активация плагина	 
-	 */
-	public function Activate() {		
-		return true;
-	}
-	
-	/**
-	 * Инициализация плагина
-	 */
-	public function Init() {
-	}
+
+    /**
+     * Активация плагина
+     */
+    public function Activate()
+    {
+        return true;
+    }
+
+    /**
+     * Инициализация плагина
+     */
+    public function Init()
+    {
+    }
 }
-?>

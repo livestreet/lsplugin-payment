@@ -19,33 +19,25 @@
  * Запрещаем напрямую через браузер обращение к этому файлу.
  */
 if (!class_exists('Plugin')) {
-	die('Hacking attempt!');
+    die('Hacking attempt!');
 }
 
-class PluginPayment extends Plugin {
+class PluginPayment extends Plugin
+{
 
-	
+    /**
+     * Активация плагина
+     */
+    public function Activate()
+    {
+        return true;
+    }
 
-	
-	/**
-	 * Активация плагина
-	 * Создание таблицы в базе данных при ее отсутствии.
-	 */
-	public function Activate() {		
-		if (!$this->isTableExists('prefix_payment')) {
-			/**
-			 * При активации выполняем SQL дамп
-			 */
-			$this->ExportSQL(dirname(__FILE__).'/dump.sql');
-		}
-		return true;
-	}
-	
-	/**
-	 * Инициализация плагина
-	 */
-	public function Init() {
-	
-	}
+    /**
+     * Инициализация плагина
+     */
+    public function Init()
+    {
+
+    }
 }
-?>

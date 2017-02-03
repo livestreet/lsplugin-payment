@@ -1,4 +1,5 @@
 <?php
+
 /*-------------------------------------------------------
 *
 *   LiveStreet Engine Social Networking
@@ -15,8 +16,9 @@
 ---------------------------------------------------------
 */
 
-class PluginPayment_ModulePayment_EntityPaymentPaypro extends Entity 
-{    
-    
+class PluginPayment_ModulePayment_EntityPaymentPaypro extends Entity
+{
+
 }
+
 ?>

@@ -1,4 +1,5 @@
 <?php
+
 /*-------------------------------------------------------
 *
 *   LiveStreet Engine Social Networking
@@ -15,22 +16,28 @@
 ---------------------------------------------------------
 */
 
-class PluginPayment_ModulePayment_EntityPaymentCurrency extends Entity 
-{    
-    public function getId() {
+class PluginPayment_ModulePayment_EntityPaymentCurrency extends Entity
+{
+    public function getId()
+    {
         return $this->_aData['id'];
-    } 
-    public function getName() {
+    }
+
+    public function getName()
+    {
         return $this->_aData['name'];
     }
-           
-     
-    
-	public function setId($data) {
-        $this->_aData['id']=$data;
-    }   
-    public function setName($data) {
-        $this->_aData['name']=$data;
-    }    
+
+
+    public function setId($data)
+    {
+        $this->_aData['id'] = $data;
+    }
+
+    public function setName($data)
+    {
+        $this->_aData['name'] = $data;
+    }
 }
+
 ?>

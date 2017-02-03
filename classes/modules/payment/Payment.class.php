@@ -1435,5 +1435,3 @@ class PluginPayment_ModulePayment extends Module
     }
 
 }
-
-?>

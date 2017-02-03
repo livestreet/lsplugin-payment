@@ -46,7 +46,7 @@
 			{/if}
 
 			<input type="hidden" id="payment_id" value="{$oPayment->getId()}">
-			<input type="submit" name="" value="{$aLang.plugin.payment.payment_submit}" onclick="ls.plugin.payment.processing();">
+			<input type="submit" class="ls-button" name="" value="{$aLang.plugin.payment.payment_submit}" onclick="ls.plugin.payment.processing();">
 		</div>
 
 

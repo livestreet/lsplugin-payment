@@ -1,4 +1,5 @@
 <?php
+
 /*-------------------------------------------------------
 *
 *   LiveStreet Engine Social Networking
@@ -15,22 +16,26 @@
 ---------------------------------------------------------
 */
 
-class PluginPayment_ModulePayment_EntityPaymentTarget extends Entity {    
-    
-	/**
-	 * Возвращает название объекта покупки (товара)
-	 */
-	public function getTargetName() {
-		$aData=$this->PluginPayment_Payment_GetTargetInfo($this->getTargetType(),$this->getTargetId());
-		return $aData['name'];
-	}
-	
-	/**
-	 * Возвращает описание товара, которое указывается на странице оплаты платежной системы
-	 */
-	public function getTargetPaymentDescription() {
-		$aData=$this->PluginPayment_Payment_GetTargetInfo($this->getTargetType(),$this->getTargetId());
-		return $aData['payment_description'];
-	}
+class PluginPayment_ModulePayment_EntityPaymentTarget extends Entity
+{
+
+    /**
+     * Возвращает название объекта покупки (товара)
+     */
+    public function getTargetName()
+    {
+        $aData = $this->PluginPayment_Payment_GetTargetInfo($this->getTargetType(), $this->getTargetId());
+        return $aData['name'];
+    }
+
+    /**
+     * Возвращает описание товара, которое указывается на странице оплаты платежной системы
+     */
+    public function getTargetPaymentDescription()
+    {
+        $aData = $this->PluginPayment_Payment_GetTargetInfo($this->getTargetType(), $this->getTargetId());
+        return $aData['payment_description'];
+    }
 }
+
 ?>

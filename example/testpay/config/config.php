@@ -15,9 +15,9 @@
 ---------------------------------------------------------
 */
 
+/**
+ * Роутинг
+ */
+$config['$root$']['router']['page']['testpay'] = 'PluginTestpay_ActionTestpay';
 
-
-Config::Set('router.page.testpay', 'PluginTestpay_ActionTestpay');
-
-
-?>
+return $config;

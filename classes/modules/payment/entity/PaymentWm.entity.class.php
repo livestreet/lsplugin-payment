@@ -1,4 +1,5 @@
 <?php
+
 /*-------------------------------------------------------
 *
 *   LiveStreet Engine Social Networking
@@ -15,70 +16,108 @@
 ---------------------------------------------------------
 */
 
-class PluginPayment_ModulePayment_EntityPaymentWm extends Entity 
-{    
-    public function getPaymentId() {
+class PluginPayment_ModulePayment_EntityPaymentWm extends Entity
+{
+    public function getPaymentId()
+    {
         return $this->_aData['payment_id'];
-    } 
-    public function getLmiPayeePurse() {
+    }
+
+    public function getLmiPayeePurse()
+    {
         return $this->_aData['LMI_PAYEE_PURSE'];
     }
-    public function getLmiPaymentAmount() {
+
+    public function getLmiPaymentAmount()
+    {
         return $this->_aData['LMI_PAYMENT_AMOUNT'];
     }
-    public function getLmiMode() {
+
+    public function getLmiMode()
+    {
         return $this->_aData['LMI_MODE'];
     }
-    public function getLmiSysInvsNo() {
+
+    public function getLmiSysInvsNo()
+    {
         return $this->_aData['LMI_SYS_INVS_NO'];
     }
-    public function getLmiSysTransNo() {
+
+    public function getLmiSysTransNo()
+    {
         return $this->_aData['LMI_SYS_TRANS_NO'];
     }
-    public function getLmiPayerPurse() {
+
+    public function getLmiPayerPurse()
+    {
         return $this->_aData['LMI_PAYER_PURSE'];
     }
-    public function getLmiPayerWm() {
+
+    public function getLmiPayerWm()
+    {
         return $this->_aData['LMI_PAYER_WM'];
     }
-    public function getLmiHash() {
+
+    public function getLmiHash()
+    {
         return $this->_aData['LMI_HASH'];
     }
-    public function getLmiSysTransDate() {
+
+    public function getLmiSysTransDate()
+    {
         return $this->_aData['LMI_SYS_TRANS_DATE'];
     }
-           
-     
-    
-	public function setPaymentId($data) {
-        $this->_aData['payment_id']=$data;
-    }   
-    public function setLmiPayeePurse($data) {
-        $this->_aData['LMI_PAYEE_PURSE']=$data;
-    } 
-    public function setLmiPaymentAmount($data) {
-        $this->_aData['LMI_PAYMENT_AMOUNT']=$data;
+
+
+    public function setPaymentId($data)
+    {
+        $this->_aData['payment_id'] = $data;
     }
-    public function setLmiMode($data) {
-        $this->_aData['LMI_MODE']=$data;
+
+    public function setLmiPayeePurse($data)
+    {
+        $this->_aData['LMI_PAYEE_PURSE'] = $data;
     }
-    public function setLmiSysInvsNo($data) {
-        $this->_aData['LMI_SYS_INVS_NO']=$data;
+
+    public function setLmiPaymentAmount($data)
+    {
+        $this->_aData['LMI_PAYMENT_AMOUNT'] = $data;
     }
-    public function setLmiSysTransNo($data) {
-        $this->_aData['LMI_SYS_TRANS_NO']=$data;
+
+    public function setLmiMode($data)
+    {
+        $this->_aData['LMI_MODE'] = $data;
     }
-    public function setLmiPayerPurse($data) {
-        $this->_aData['LMI_PAYER_PURSE']=$data;
+
+    public function setLmiSysInvsNo($data)
+    {
+        $this->_aData['LMI_SYS_INVS_NO'] = $data;
     }
-    public function setLmiPayerWm($data) {
-        $this->_aData['LMI_PAYER_WM']=$data;
+
+    public function setLmiSysTransNo($data)
+    {
+        $this->_aData['LMI_SYS_TRANS_NO'] = $data;
     }
-    public function setLmiHash($data) {
-        $this->_aData['LMI_HASH']=$data;
+
+    public function setLmiPayerPurse($data)
+    {
+        $this->_aData['LMI_PAYER_PURSE'] = $data;
     }
-    public function setLmiSysTransDate($data) {
-        $this->_aData['LMI_SYS_TRANS_DATE']=$data;
-    }   
+
+    public function setLmiPayerWm($data)
+    {
+        $this->_aData['LMI_PAYER_WM'] = $data;
+    }
+
+    public function setLmiHash($data)
+    {
+        $this->_aData['LMI_HASH'] = $data;
+    }
+
+    public function setLmiSysTransDate($data)
+    {
+        $this->_aData['LMI_SYS_TRANS_DATE'] = $data;
+    }
 }
+
 ?>
